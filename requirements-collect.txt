@@ -1,0 +1,4 @@
+# 采集专用依赖 (仅真实采集需要)
+playwright>=1.40
+scrapling[fetchers]
+httpx>=0.25

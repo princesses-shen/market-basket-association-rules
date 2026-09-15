@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>智聘 · 招聘分析平台</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="navbar-container"></div>
+
+<!-- 搜索区 -->
+<div class="search-hero">
+  <h1>找到你的下一份工作</h1>
+  <p>1200+ 热门岗位，实时数据大屏分析</p>
+  <div class="search-box">
+    <select id="citySel">
+      <option value="">全部城市</option>
+    </select>
+    <input type="text" id="kwInput" placeholder="搜索岗位、公司或技能关键词...">
+    <button onclick="goSearch()">搜索</button>
+  </div>
+</div>
+
+<!-- 推荐岗位 -->
+<div style="max-width:1200px;margin:24px auto;padding:0 20px;">
+  <div class="card">
+    <h3>推荐岗位</h3>
+    <div id="featuredList"></div>
+  </div>
+</div>
+
+<!-- 热门城市 -->
+<div style="max-width:1200px;margin:24px auto;padding:0 20px;">
+  <div class="card">
+    <h3>热门城市</h3>
+    <div class="city-grid" id="cityGrid"></div>
+  </div>
+</div>
+
+<!-- 底部 -->
+<div style="text-align:center;padding:40px;color:#999;font-size:14px;">
+  <a href="/dashboard.html" style="color:var(--primary);">查看数据大屏分析 →</a>
+  <p style="margin-top:12px;">智聘招聘分析平台 © 2026 | 基于 Hadoop-HBase + Spring Boot + ECharts</p>
+</div>
+
+<script src="/js/common.js"></script>
+<script>
+injectNavbar('home');
+
+// 加载城市列表
+async function loadCities() {
+  var cities = await api('/api/job/cities');
+  var sel = document.getElementById('citySel');
+  cities.forEach(function(c) {
+    var o = document.createElement('option');
+    o.value = c; o.textContent = c;
+    sel.appendChild(o);
+  });
+  // 热门城市卡片
+  var grid = document.getElementById('cityGrid');
+  cities.slice(0, 10).forEach(function(c) {
+    grid.innerHTML += '<div class="city-card" onclick="location.href=\'/search.html?city='+c+'\'">'
+      + '<div class="city-name">' + c + '</div>'
+      + '<div class="city-count">点击查看岗位</div></div>';
+  });
+}
+
+// 加载推荐岗位
+async function loadFeatured() {
+  var jobs = await api('/api/job/featured');
+  var el = document.getElementById('featuredList');
+  if (!jobs || jobs.length === 0) {
+    el.innerHTML = '<p style="text-align:center;color:#999;">暂无推荐岗位</p>';
+    return;
+  }
+  el.innerHTML = jobs.map(jobCardHTML).join('');
+}
+
+function goSearch() {
+  var city = document.getElementById('citySel').value;
+  var kw = document.getElementById('kwInput').value;
+  var url = '/search.html?';
+  if (city) url += 'city=' + encodeURIComponent(city) + '&';
+  if (kw) url += 'keyword=' + encodeURIComponent(kw);
+  location.href = url;
+}
+
+document.getElementById('kwInput').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') goSearch();
+});
+
+loadCities();
+loadFeatured();
+</script>
+</body>
+</html>

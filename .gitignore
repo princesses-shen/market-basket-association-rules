@@ -1,0 +1,32 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# ---- 日志与运行时产物 ----
+*.log
+*.pid
+start_website.log
+autostart.log
+app.log
+predict.log
+
+# ---- 本机/环境相关 ----
+.env
+.env.*
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# ---- 本机私有配置（真实服务器地址 / SSH 密码，绝不入库）----
+# 模板 config/local.env.example 是要入库的，别把它一起忽略掉
+config/local.env
+
+# ---- WorkBuddy 本地工作状态（含机器相关路径，不入库）----
+.workbuddy/

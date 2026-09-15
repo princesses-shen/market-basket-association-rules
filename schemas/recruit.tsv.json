@@ -1,0 +1,94 @@
+{
+  "version": "1.1.0",
+  "format": "tsv",
+  "description": "招聘数据契约 - 10列, 第10列为公司档次(规则推断)",
+  "columns": [
+    {
+      "name": "city",
+      "type": "string",
+      "required": true,
+      "desc": "城市"
+    },
+    {
+      "name": "job_id",
+      "type": "string",
+      "required": true,
+      "desc": "岗位ID"
+    },
+    {
+      "name": "title",
+      "type": "string",
+      "required": true,
+      "desc": "岗位名称"
+    },
+    {
+      "name": "company",
+      "type": "string",
+      "required": true,
+      "desc": "公司名称"
+    },
+    {
+      "name": "salary_low",
+      "type": "int",
+      "required": true,
+      "min": 0,
+      "max": 200,
+      "desc": "薪资下限(K)"
+    },
+    {
+      "name": "salary_high",
+      "type": "int",
+      "required": true,
+      "min": 0,
+      "max": 300,
+      "desc": "薪资上限(K)"
+    },
+    {
+      "name": "edu",
+      "type": "enum",
+      "values": [
+        "不限",
+        "大专",
+        "本科",
+        "硕士",
+        "博士"
+      ],
+      "required": true,
+      "desc": "学历要求"
+    },
+    {
+      "name": "exp",
+      "type": "enum",
+      "values": [
+        "不限",
+        "应届",
+        "1年",
+        "1-3年",
+        "3-5年",
+        "5-10年",
+        "10年以上"
+      ],
+      "required": true,
+      "desc": "经验要求"
+    },
+    {
+      "name": "tags",
+      "type": "string",
+      "required": true,
+      "desc": "技能标签(分号分隔)"
+    },
+    {
+      "name": "company_tier",
+      "type": "enum",
+      "values": [
+        "头部大厂",
+        "中大型企业",
+        "成长型企业",
+        "中小-初创"
+      ],
+      "required": true,
+      "desc": "公司档次(规则推断)"
+    }
+  ],
+  "notes": "第10列 company_tier 由 src/ingest/company_tier.py 规则推断"
+}

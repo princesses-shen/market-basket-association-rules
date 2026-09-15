@@ -1,0 +1,6 @@
+# Hadoop/HBase 版本要求
+hadoop: "2.10.2"
+hbase: "2.5.9"
+zookeeper: "3.8.x"
+java: "11"
+python: "3.14"

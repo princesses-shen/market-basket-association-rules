@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>技能组合关联规则分析大屏</title>
+  <script src="js/echarts.min.js"></script>
+  <script src="js/echarts-wordcloud.min.js"></script>
+  <style>
+    body { font-family: "Microsoft YaHei", sans-serif; background: #f4f6f9; margin: 0; padding: 16px; color: #333; }
+    h2 { text-align: center; color: #1f3a5f; font-size: 24px; margin: 0 0 4px; }
+    #status { text-align: center; color: #666; font-size: 13px; margin: 0 0 12px; }
+    .grid { max-width: 1320px; margin: 0 auto; display: grid;
+            grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    .panel { background: #fff; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,.07);
+             padding: 14px; display: flex; flex-direction: column; box-sizing: border-box; min-width: 0; }
+    .panel h3 { color: #2c5aa0; border-left: 4px solid #2c5aa0; padding-left: 10px; font-size: 15px; margin: 0 0 6px; }
+    .chart { flex: 1; width: 100%; min-height: 380px; }
+    .dark { background: #101418; }
+    .dark h3 { color: #fff; border-color: #3b82f6; }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <h2>技能组合关联规则分析大屏</h2>
+  <p id="status">正在从后端接口加载数据…</p>
+  <div class="grid">
+    <div class="panel"><h3>Top 频繁技能项集</h3><div id="freqChart" class="chart"></div></div>
+    <div class="panel"><h3>规则散点（置信度 vs 提升度）</h3><div id="scatterChart" class="chart"></div></div>
+    <div class="panel dark"><h3>技能关键词词云</h3><div id="kwChart" class="chart"></div></div>
+    <div class="panel"><h3>Top 强规则（按 lift 排序）</h3><div id="ruleChart" class="chart"></div></div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

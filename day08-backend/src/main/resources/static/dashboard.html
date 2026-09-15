@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数据大屏 · 智聘</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="dashboard-body">
+<div id="navbar-container"></div>
+<div class="dashboard-status" id="status">加载中...</div>
+<div class="dashboard-grid">
+  <div class="chart-card"><h3>Top 频繁技能项集</h3><div id="freqChart" style="width:100%;height:350px;"></div></div>
+  <div class="chart-card"><h3>规则散点（置信度 vs 提升度）</h3><div id="scatterChart" style="width:100%;height:350px;"></div></div>
+  <div class="chart-card"><h3>技能关键词词云</h3><div id="kwChart" style="width:100%;height:350px;"></div></div>
+  <div class="chart-card"><h3>Top 强规则（按 lift 排序）</h3><div id="ruleChart" style="width:100%;height:350px;"></div></div>
+</div>
+
+<script src="/js/echarts.min.js"></script>
+<script src="/js/echarts-wordcloud.min.js"></script>
+<script src="/js/common.js"></script>
+<script src="/app.js"></script>
+<script>
+injectNavbar('dashboard');
+</script>
+</body>
+</html>

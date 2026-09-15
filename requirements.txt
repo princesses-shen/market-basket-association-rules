@@ -1,0 +1,10 @@
+# 核心依赖 (训练/清洗/预测服务)
+pandas>=2.0
+numpy>=1.24
+xgboost>=2.0
+scipy>=1.10
+scikit-learn>=1.3
+mlxtend>=0.23
+matplotlib>=3.7
+happybase>=1.2
+paramiko>=3.0

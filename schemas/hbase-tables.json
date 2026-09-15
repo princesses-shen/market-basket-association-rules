@@ -1,0 +1,79 @@
+{
+  "version": "1.0.0",
+  "tables": {
+    "recruit_job": {
+      "cf": "info",
+      "rowkey": "job_{id}",
+      "columns": {
+        "city": "string",
+        "title": "string",
+        "company": "string",
+        "salary_low": "int",
+        "salary_high": "int",
+        "edu": "string",
+        "exp": "string",
+        "tags": "string",
+        "company_tier": "string",
+        "category": "string",
+        "desc": "string",
+        "publish_time": "string"
+      }
+    },
+    "recruit_position": {
+      "cf": "info",
+      "rowkey": "city",
+      "columns": {
+        "position_count": "int"
+      }
+    },
+    "recruit_salary": {
+      "cf": "info",
+      "rowkey": "salary_range",
+      "columns": {
+        "job_count": "int"
+      }
+    },
+    "recruit_salary_trend": {
+      "cf": "info",
+      "rowkey": "row_idx",
+      "columns": {
+        "low": "int",
+        "high": "int"
+      }
+    },
+    "recruit_keyword": {
+      "cf": "info",
+      "rowkey": "keyword",
+      "columns": {
+        "count": "int"
+      }
+    },
+    "recruit_assoc_rules": {
+      "cf": "info",
+      "rowkey": "rule_idx",
+      "columns": {
+        "antecedents": "string",
+        "consequents": "string",
+        "support": "float",
+        "confidence": "float",
+        "lift": "float"
+      }
+    },
+    "recruit_tier": {
+      "cf": "info",
+      "rowkey": "tier",
+      "columns": {
+        "count": "int",
+        "avg_salary": "float"
+      }
+    },
+    "recruit_user": {
+      "cf": "info",
+      "rowkey": "username",
+      "columns": {
+        "password_hash": "string",
+        "email": "string"
+      }
+    }
+  }
+}

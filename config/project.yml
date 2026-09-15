@@ -1,0 +1,46 @@
+# ============================================================
+# 配置参考（仅供查阅，不参与运行）
+# ------------------------------------------------------------
+# 程序运行时实际读取的是：
+#     config/local.env   —— 本机私有值（不入库，模板见 local.env.example）
+#     config.py          —— 读取上者并暴露给全项目
+# 本文件只是把整体部署拓扑列出来方便对照，
+# 因此一律使用占位符，请勿在此填真实地址与密码。
+# ============================================================
+cluster:
+  host: YOUR_VM_HOST
+  ssh_user: YOUR_SSH_USER
+  ssh_port: 22
+  hbase:
+    zk_port: 2181
+    thrift_port: 9090
+  hadoop:
+    home: /usr/local/hadoop
+    version: "2.10.2"
+  hbase:
+    version: "2.5.9"
+
+predict:
+  host: 127.0.0.1
+  port: 8788
+  python: python3
+  model_path: /home/YOUR_SSH_USER/predict/artifacts/models/salary_predictor.pkl
+
+backend:
+  port: 8080
+  java_home: /usr/lib/jvm/java-11-openjdk-amd64
+  project_dir: /home/YOUR_SSH_USER/day08
+
+paths:
+  base: "<项目根目录>"
+  data_raw: data/raw/51job
+  data_clean: data/clean/recruit_clean.tsv
+  models: artifacts/models
+  schemas: schemas
+  tests: tests
+
+algorithm:
+  min_support: 0.05
+  min_confidence: 0.3
+  min_lift: 1.0
+  method: apriori  # or fpgrowth

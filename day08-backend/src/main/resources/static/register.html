@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>注册 · 智聘</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="navbar-container"></div>
+
+<div class="login-page">
+  <div class="login-card">
+    <div class="login-tabs">
+      <button class="login-tab active" onclick="switchTab('user')">用户注册</button>
+      <button class="login-tab" onclick="switchTab('company')">企业注册</button>
+    </div>
+
+    <!-- 用户注册 -->
+    <div id="userPanel" class="login-panel active">
+      <h2>加入智聘</h2>
+      <input type="text" id="userUsername" placeholder="用户名" class="login-input">
+      <input type="password" id="userPassword" placeholder="密码" class="login-input">
+      <input type="email" id="userEmail" placeholder="邮箱" class="login-input">
+      <button class="login-btn" onclick="userRegister()">注册</button>
+      <p class="login-tip">已有账号? <a href="/login.html">去登录</a></p>
+    </div>
+
+    <!-- 企业注册 -->
+    <div id="companyPanel" class="login-panel">
+      <h2>企业入驻</h2>
+      <input type="text" id="compUsername" placeholder="企业账号" class="login-input">
+      <input type="password" id="compPassword" placeholder="密码" class="login-input">
+      <input type="text" id="companyName" placeholder="公司名称" class="login-input">
+      <input type="text" id="industry" placeholder="所属行业 (如 互联网/金融/教育)" class="login-input">
+      <select id="compCity" class="login-input">
+        <option value="">选择城市</option>
+        <option>北京</option><option>上海</option><option>广州</option><option>深圳</option>
+        <option>杭州</option><option>成都</option><option>南京</option><option>武汉</option>
+      </select>
+      <select id="scale" class="login-input">
+        <option value="">公司规模</option>
+        <option>少于50人</option><option>50-150人</option><option>150-500人</option>
+        <option>500-2000人</option><option>2000人以上</option>
+      </select>
+      <button class="login-btn" onclick="companyRegister()">注册</button>
+      <p class="login-tip">已有企业账号? <a href="/login.html">去登录</a></p>
+    </div>
+  </div>
+</div>
+
+<style>
+.login-page {
+  min-height: calc(100vh - 60px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 30px 0;
+}
+.login-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 40px;
+  width: 420px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+.login-tabs { display: flex; margin-bottom: 30px; border-bottom: 2px solid var(--bg); }
+.login-tab {
+  flex: 1; padding: 12px; border: none; background: none;
+  font-size: 16px; cursor: pointer; color: var(--text-light);
+  border-bottom: 3px solid transparent; transition: all .2s;
+}
+.login-tab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+.login-panel { display: none; }
+.login-panel.active { display: block; }
+.login-panel h2 { margin: 0 0 24px; font-size: 24px; }
+.login-input {
+  width: 100%; padding: 12px 16px; border: 1px solid var(--border);
+  border-radius: 8px; font-size: 14px; margin-bottom: 12px;
+  outline: none; box-sizing: border-box; transition: border-color .2s;
+}
+.login-input:focus { border-color: var(--primary); }
+.login-btn {
+  width: 100%; padding: 12px; background: var(--primary); color: #fff;
+  border: none; border-radius: 8px; font-size: 16px; cursor: pointer; margin-top: 8px;
+}
+.login-btn:hover { background: var(--primary-dark); }
+.login-tip { text-align: center; margin: 16px 0 0; font-size: 13px; }
+</style>
+
+<script src="/js/common.js"></script>
+<script>
+injectNavbar('register');
+
+// URL 参数自动切企业
+var params = new URLSearchParams(location.search);
+if (params.get('type') === 'company') switchTab('company');
+
+function switchTab(type) {
+  document.querySelectorAll('.login-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.login-panel').forEach(p => p.classList.remove('active'));
+  if (type === 'user') {
+    document.querySelectorAll('.login-tab')[0].classList.add('active');
+    document.getElementById('userPanel').classList.add('active');
+  } else {
+    document.querySelectorAll('.login-tab')[1].classList.add('active');
+    document.getElementById('companyPanel').classList.add('active');
+  }
+}
+
+async function userRegister() {
+  var username = document.getElementById('userUsername').value;
+  var password = document.getElementById('userPassword').value;
+  var email = document.getElementById('userEmail').value;
+  if (!username || !password) { alert('请填写用户名和密码'); return; }
+  var res = await fetch('/api/user/register', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({username: username, password: password, email: email})
+  }).then(r => r.json());
+  if (res.code === 0) {
+    alert('注册成功，请登录');
+    location.href = '/login.html';
+  } else { alert(res.msg); }
+}
+
+async function companyRegister() {
+  var username = document.getElementById('compUsername').value;
+  var password = document.getElementById('compPassword').value;
+  var companyName = document.getElementById('companyName').value;
+  var industry = document.getElementById('industry').value;
+  var city = document.getElementById('compCity').value;
+  var scale = document.getElementById('scale').value;
+  if (!username || !password || !companyName) { alert('请填写账号、密码和公司名'); return; }
+  var res = await fetch('/api/company/register', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      username: username, password: password, companyName: companyName,
+      industry: industry, city: city, scale: scale
+    })
+  }).then(r => r.json());
+  if (res.code === 0) {
+    alert('企业注册成功，请登录');
+    location.href = '/login.html';
+  } else { alert(res.msg); }
+}
+</script>
+</body>
+</html>
