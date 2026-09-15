@@ -12,6 +12,7 @@
 默认数据源见 config.DATA_SOURCE（skills / basket），可改 config 切换。
 """
 import os
+import sys
 import pandas as pd
 
 import config
@@ -27,6 +28,18 @@ from src.hbase_connector import load_from_hbase, load_keyword_freq_from_hbase, w
 
 
 def main():
+    # -------- 可复现性：钉死字符串哈希种子 --------
+    # 关联规则里的项集是 frozenset，它的 repr 顺序由字符串哈希决定，
+    # 而 Python 默认给哈希加随机盐 —— 不钉种子的后果是：每次运行
+    # frequent_itemsets.csv / association_rules.csv / strong_rules_readable.csv
+    # 以及 top_rules.png、两个 ECharts HTML 的内容都会变（结果其实一样，
+    # 只是 frozenset({'java','spring'}) 与 frozenset({'spring','java'}) 的差别）。
+    # 哈希盐只在解释器启动时确定，所以这里必须重新 exec 自己，
+    # 光改 os.environ 是无效的。
+    if os.environ.get("PYTHONHASHSEED") is None:
+        os.environ["PYTHONHASHSEED"] = "0"
+        os.execv(sys.executable, [sys.executable, os.path.abspath(__file__)])
+
     print("=" * 60)
     print("项目九 · 购物篮 / 技能组合分析（关联规则）")
     print("=" * 60)

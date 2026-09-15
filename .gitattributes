@@ -35,6 +35,10 @@ Makefile text eol=lf
 *.gz binary
 *.xlsx binary
 
+# 第三方本地化 JS 库 —— 保持 CDN 原始字节
+# echarts.min.js 内部有若干 CRLF，若被 text=auto 归一化会改变文件内容
+*.min.js binary
+
 # 数据文件保持原始字节（UTF-8 BOM / CRLF 都不要动）
 *.csv -text
 *.tsv -text

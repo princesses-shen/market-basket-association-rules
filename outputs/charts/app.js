@@ -25,8 +25,7 @@ function drawFreq(list) {
 }
 
 function drawScatter(rules) {
-  // 修复错位：data 用纯数字数组 [conf, lift, support, 索引]
-  // rule 存外部 map 按 dataIndex 查，避免字符串进 visualMap 导致颜色/位置错乱
+  // 修复错位：data 用纯数字数组，rule 存外部 map，避免字符串进 visualMap
   var ruleMap = {};
   var data = rules.map(function (r, i) { ruleMap[i] = r.rule; return [r.confidence, r.lift, r.support, i]; });
   scatterEl.setOption({
@@ -34,16 +33,14 @@ function drawScatter(rules) {
     tooltip: { trigger: 'item', formatter: function (p) {
       var d = p.data;
       return ruleMap[d[3]] + '<br/>conf=' + d[0].toFixed(3) + '  lift=' + d[1].toFixed(3) + '  support=' + d[2].toFixed(3); } },
-    grid: { left: '10%', right: '18%', top: 40, bottom: 50 },
+    grid: { left: '10%', right: '10%', top: 40, bottom: 50 },
     xAxis: { type: 'value', name: 'confidence', min: 0, max: 1.0, nameLocation: 'middle', nameGap: 28,
              axisLabel: { formatter: function (v) { return v.toFixed(1); } } },
     yAxis: { type: 'value', name: 'lift' },
-    // dimension:1 按 lift 映射颜色；放右上竖向，避免与 X 轴标签重叠
-    visualMap: { min: 1, max: 15, dimension: 1, calculable: true, orient: 'vertical',
-                 right: 10, top: 50,
+    // dimension:1 明确按 lift 映射颜色，避免取最后一位(索引)干扰
+    visualMap: { min: 1, max: 15, dimension: 1, calculable: true, orient: 'horizontal', left: 'center', bottom: 5,
                  inRange: { color: ['#f5d4d4', '#c23531'] },
-                 text: ['lift高', 'lift低'],
-                 itemHeight: 120 },
+                 text: ['lift高', 'lift低'] },
     series: [{ type: 'scatter', data: data,
       symbolSize: function (d) { return Math.max(6, d[2] * 100); }, itemStyle: { opacity: 0.55 } }]
   });

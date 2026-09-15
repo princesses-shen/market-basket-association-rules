@@ -55,7 +55,8 @@
 │   └── processed/            # 产出：频繁项集 / 关联规则 / 项频次
 │
 ├── outputs/
-│   ├── charts/               # ★ 4 张 PNG + ECharts 交互看板 + 大屏 index.html（见第五节）
+│   ├── charts/               # ★ 4 张 PNG + index.html 大屏 + app.js + 2 个规则图 HTML
+│   │   └── js/               # 大屏用的本地化 echarts 库（已入库，离线可用）
 │   └── reports/              # strong_rules_readable.csv（业务可读强规则）
 │
 ├── artifacts/models/         # salary_predictor.pkl（XGBoost 模型）
@@ -90,6 +91,13 @@ python main.py          # 默认 DATA_SOURCE=skills，生成 CSV + 图表到 out
 
 切换数据源：编辑 `config.py` 中 `DATA_SOURCE = "basket"` 或 `"skills"`。
 
+> **产物可复现**：`main.py` 会在启动时把 `PYTHONHASHSEED` 钉成 `0`（未设置时自动 `os.execv` 重启自己）。
+> 原因：项集是 `frozenset`，它的打印顺序由字符串哈希决定，而 Python 默认给哈希加随机盐 ——
+> 不钉种子的话，每次运行 `frequent_itemsets.csv`、`association_rules.csv`、`top_rules.png`
+> 和两个 ECharts HTML 的字节内容都会变（**挖掘结果其实完全一样，只是 `frozenset({'java','spring'})`
+> 与 `frozenset({'spring','java'})` 的区别**）。
+> 需要复现某次运行的产物时，别覆盖这个行为。
+
 ## 五、可视化输出
 
 ### 5.1 静态图表
@@ -118,10 +126,15 @@ python main.py          # 默认 DATA_SOURCE=skills，生成 CSV + 图表到 out
 | `rules_scatter.png` | 置信度 vs 提升度散点图 |
 | `top_rules.png` | Top 强规则条形图 |
 | `cooccurrence_heatmap.png` | 高频项共现热力图 |
-| `rules_network.html` | ECharts 交互式规则网络 |
-| `rules_heatmap.html` | ECharts 交互式规则热力图 |
+| `index.html` + `app.js` | day8 风格 4-panel 大屏（词云 / 散点 / 规则分布 / 关联网络） |
+| `rules_network.html` | ECharts 交互式规则网络（单文件，走 CDN） |
+| `rules_heatmap.html` | ECharts 交互式规则热力图（单文件，走 CDN） |
+| `js/echarts.min.js`、`js/echarts-wordcloud.min.js` | 大屏用的本地化 echarts 库（已随仓库提交，离线可用） |
 
 > 图表的生成逻辑在 `src/visualizer.py`，跑一次 `python main.py` 即可重新产出。
+> 大屏 `index.html` 引用的是**本地** `js/` 目录；若这两个文件缺失，
+> `src/visualizer.py::_ensure_echarts_libs()` 会在运行时自动从 jsDelivr 下载补齐。
+> 另外两个 HTML 直接走 CDN，需要联网。
 
 ## 六、完整部署（虚拟机 + 大数据全栈）
 

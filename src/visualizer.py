@@ -293,12 +293,15 @@ def export_day08_dashboard(out_dir: str = None) -> str:
     _ensure_echarts_libs()
 
     # index.html
+    # 注意 newline="\n"：不写的话 Windows 会把 \n 翻成 \r\n，
+    # 同一份代码在 Linux 上产出 LF、Windows 上产出 CRLF，跨平台产物不一致
+    # （.gitattributes 里这些文件是 eol=lf）。
     idx_path = os.path.join(out_dir, "index.html")
-    with open(idx_path, "w", encoding="utf-8") as f:
+    with open(idx_path, "w", encoding="utf-8", newline="\n") as f:
         f.write(_INDEX_TPL)
     # app.js
     app_path = os.path.join(out_dir, "app.js")
-    with open(app_path, "w", encoding="utf-8") as f:
+    with open(app_path, "w", encoding="utf-8", newline="\n") as f:
         f.write(_APP_JS)
     print(f"  day8 大屏: {idx_path}")
     print(f"  day8 大屏: {app_path}")
@@ -330,7 +333,7 @@ def export_echarts_network(rules: pd.DataFrame, top_n: int = TOP_N_RULES,
 </body></html>"""
     html = tpl.replace("__N__", json.dumps(nodes, ensure_ascii=False))
     html = html.replace("__L__", json.dumps(links, ensure_ascii=False))
-    with open(out_path, "w", encoding="utf-8") as f:
+    with open(out_path, "w", encoding="utf-8", newline="\n") as f:
         f.write(html)
     return out_path
 
@@ -355,6 +358,6 @@ def export_echarts_heatmap(rules: pd.DataFrame, top_n: int = TOP_N_RULES,
     html = tpl.replace("__X__", json.dumps(x_labels, ensure_ascii=False))
     html = html.replace("__Y__", json.dumps(y_labels, ensure_ascii=False))
     html = html.replace("__D__", json.dumps(data, ensure_ascii=False))
-    with open(out_path, "w", encoding="utf-8") as f:
+    with open(out_path, "w", encoding="utf-8", newline="\n") as f:
         f.write(html)
     return out_path
