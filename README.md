@@ -23,25 +23,62 @@
 
 ```
 09-购物篮技能组合分析-关联规则/
-├── config.py                 # Python 配置（路径/算法参数/HBase 开关）
-├── main.py                   # 主入口，串起完整流程
-├── requirements.txt          # Python 依赖
-├── Makefile                  # 一键任务入口（test/crawl/model/agg/serve）
-├── README.md
+├── config.py                 # Python 配置中心（路径 / 算法参数 / 加载私有配置）
+├── main.py                   # 主入口：加载→编码→挖掘→规则→可视化→写回 HBase
+├── Makefile                  # 一键任务入口（test / crawl / merge / model / gen-data / hbase-data / serve）
+├── requirements.txt          # 核心依赖（训练 / 清洗 / 预测）
+├── requirements-collect.txt  # 采集专用依赖（playwright / scrapling）
 ├── start_website.bat         # Windows 一键启动器（双击即用，见 6.8）
 ├── start_website.log         # 运行后生成：bat 六步执行日志（排障先看它）
+├── .gitattributes/.gitignore # 行尾规范（bat=CRLF / sh=LF）与忽略规则
+│
+├── config/                   # 配置目录
+│   ├── local.env.example     # ★ 私有配置模板：复制成 local.env 填自己的地址与密码（见 6.1）
+│   ├── local.env             # ✗ 本机真实值，不入库（已 gitignore）
+│   ├── hadoop.yml            # Hadoop 集群参数
+│   └── project.yml           # 部署拓扑参考（纯占位符文档，不参与运行）
+│
+├── src/                      # Python 算法层
+│   ├── data_loader.py        # 数据加载与概览
+│   ├── preprocessor.py       # TransactionEncoder 0/1 项集编码
+│   ├── model.py              # Apriori / FP-Growth 频繁项集
+│   ├── evaluator.py          # 规则生成 + support/confidence/lift 筛选
+│   ├── hbase_connector.py    # HBase 读写（连不上自动降级为本地 CSV）
+│   ├── visualizer.py         # matplotlib 图表 + ECharts HTML 看板
+│   ├── analysis/             # XGBoost 薪资预测：features.py 特征工程 / train.py 训练
+│   ├── ingest/               # 采集与入库：collect_v5 / merge_clean / generate / update_tier_hbase
+│   └── serving/predict_api/  # 预测服务 serve_api.py（端口 8788）
+│
 ├── data/
-│   ├── raw/                    # market_basket.csv / recruit_skills.tsv
-│   └── processed/             # 运行后生成频繁项集/规则 CSV
-├── src/                        # Python 算法层（loader/preprocessor/model/evaluator/visualizer/hbase）
-├── day08-backend/              # Spring Boot 后端 + 前端静态资源
-│   ├── pom.xml
-│   └── src/main/{java/com/example/demo, resources/{application.properties, static}}
+│   ├── raw/                  # market_basket.csv（购物篮）/ recruit_skills.tsv（技能事务）
+│   ├── clean/                # recruit_clean.tsv（清洗后招聘数据，10 列契约）
+│   └── processed/            # 产出：频繁项集 / 关联规则 / 项频次
+│
+├── outputs/
+│   ├── charts/               # ★ 4 张 PNG + ECharts 交互看板 + 大屏 index.html（见第五节）
+│   └── reports/              # strong_rules_readable.csv（业务可读强规则）
+│
+├── artifacts/models/         # salary_predictor.pkl（XGBoost 模型）
+├── schemas/                  # 数据契约 JSON（recruit.tsv.json / hbase-tables.json）
+├── tests/test_schema.py      # 10 列数据契约校验（make test）
+├── tools/ssh_helper.py       # SSH 远程执行与文件传输
+├── scripts/
+│   ├── deploy.py             # 一键部署到虚拟机（SFTP + mvn + 启动）
+│   └── gen_data.py           # 生成 1200 条岗位 + 测试用户，灌入 HBase
+│
 ├── deploy/
 │   ├── setup/install_hadoop_hbase.sh   # 大数据层一键安装
-│   └── run/{install_cron.sh, vm_autostart.sh, deploy_predict.sh, s4_predict_start.sh, s5_backend_start.sh}
-├── scripts/deploy.py          # 一键部署到虚拟机（SFTP + mvn + 启动）
-└── outputs/{charts, reports}
+│   └── run/                  # vm_autostart.sh（VM 开机自启）、install_cron.sh
+│                             # s4_predict_start.sh / s5_backend_start.sh
+│                             # deploy_predict.sh / fix_upload_rebuild.sh
+│
+└── day08-backend/            # Spring Boot 2.7.18 + Spring Security + JWT + HBase Client
+    ├── pom.xml
+    └── src/main/
+        ├── java/com/example/demo/   # controller(10) / service(5) / config / filter / util
+        └── resources/
+            ├── application.properties
+            └── static/              # 14 个页面 + ECharts + 公共 JS/CSS
 ```
 
 ## 四、快速开始（本地纯 Python 模式）

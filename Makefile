@@ -3,7 +3,7 @@
 
 PY ?= python
 
-.PHONY: test crawl merge model agg gen-data serve backup clean
+.PHONY: test crawl merge model gen-data serve backup clean
 
 # 数据契约校验 (10列 v1.1.0, 要求 PASS)
 test:
@@ -21,13 +21,13 @@ merge:
 model:
 	$(PY) src/analysis/train.py
 
-# 聚合生成 HBase load.hbase (含 recruit_tier 表)
-agg:
-	$(PY) src/agg/agg_hbase.py
-
 # 种子数据 (教学兜底, 不与真实采集混淆)
 gen-data:
 	$(PY) src/ingest/generate.py
+
+# 生成 1200 条岗位 + 测试用户, 直接灌入 HBase (需要 config/local.env 里的 HBASE_HOST)
+hbase-data:
+	$(PY) scripts/gen_data.py
 
 # 提示虚拟机统一入口（地址读 config/local.env，该文件不入库；注意去掉 CRLF 的 \r）
 serve:
