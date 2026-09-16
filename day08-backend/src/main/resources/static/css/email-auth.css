@@ -1,0 +1,10 @@
+.email-code-row { display:flex; gap:8px; margin-bottom:12px; }
+.email-code-row .login-input { flex:1; min-width:0; margin:0; }
+.email-send { border:1px solid var(--primary); border-radius:8px; color:var(--primary); background:#fff; padding:10px 12px; white-space:nowrap; cursor:pointer; }
+.email-send:disabled, .login-btn:disabled { opacity:.6; cursor:not-allowed; }
+.auth-mode { display:flex; gap:8px; margin-bottom:16px; }
+.auth-mode button { flex:1; padding:9px; border:1px solid var(--border); border-radius:8px; background:#fff; cursor:pointer; }
+.auth-mode button[aria-pressed="true"] { background:var(--primary); color:#fff; border-color:var(--primary); }
+.auth-message { color:#b42318; margin-top:16px; line-height:1.6; }
+.login-card { max-width:calc(100vw - 32px); box-sizing:border-box; }
+@media(max-width:480px) { .login-card { padding:24px 18px; } }

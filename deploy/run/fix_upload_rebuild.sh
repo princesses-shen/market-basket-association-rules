@@ -5,6 +5,7 @@ export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
 export PATH=$JAVA_HOME/bin:$PATH
 
 cd "$HOME/day08"
+source "$HOME/day08/deploy/run/account_env.sh" || exit 1
 
 # 确保上传目录存在
 mkdir -p uploads

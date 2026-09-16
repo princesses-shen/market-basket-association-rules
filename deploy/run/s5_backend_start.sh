@@ -7,6 +7,7 @@ export HADOOP_CLASSPATH=$(/usr/local/hbase/bin/hbase classpath)
 export PATH=$JAVA_HOME/bin:$PATH
 
 cd "$HOME/day08"
+source "$HOME/day08/deploy/run/account_env.sh" || exit 1
 pkill -f demo-0.0.1-SNAPSHOT.jar 2>/dev/null || true
 sleep 2
 

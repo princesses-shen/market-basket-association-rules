@@ -693,3 +693,8 @@ bat 的 6 步逻辑：
 - mlxtend 中文文档：<https://www.aidoczh.com/mlxtend/user_guide/frequent_patterns/association_rules/>
 - Apriori 中文实战：<https://blog.csdn.net/qq_36523839/article/details/83960195>
 - GitHub 开源：<https://github.com/rasbt/mlxtend>
+
+
+## 账号邮件功能
+
+已支持用户和企业的注册邮箱验证、邮箱验证码登录及找回密码。使用 `start_backend.ps1 -Build` 启动，或 `start_backend.ps1 -SmtpTest` 单独验证 QQ SMTP。配置、接口和验收范围见 [QQ 邮箱与验证码登录](docs/QQ邮箱与验证码登录.md)。

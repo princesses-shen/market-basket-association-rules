@@ -23,6 +23,7 @@ sleep 3
 # 3. Spring Boot
 echo ">>> start spring boot" >> $LOG
 cd "$HOME/day08"
+source "$HOME/day08/deploy/run/account_env.sh" || exit 1
 nohup java -jar target/demo-0.0.1-SNAPSHOT.jar > app.log 2>&1 < /dev/null &
 echo $! > "$HOME/day08/app.pid"
 

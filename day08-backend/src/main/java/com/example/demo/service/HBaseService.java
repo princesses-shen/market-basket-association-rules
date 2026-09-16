@@ -112,6 +112,32 @@ public class HBaseService {
         }
     }
 
+    public boolean compareAndPut(String table, String rowKey, String column, String expected,
+                                 Map<String, String> data) throws Exception {
+        byte[] row = Bytes.toBytes(rowKey);
+        byte[] cf = Bytes.toBytes("info");
+        try (Table t = connection.getTable(TableName.valueOf(table))) {
+            Put put = new Put(row);
+            data.forEach((key, value) -> put.addColumn(cf, Bytes.toBytes(key), Bytes.toBytes(value)));
+            Table.CheckAndMutateBuilder check = t.checkAndMutate(row, cf).qualifier(Bytes.toBytes(column));
+            return (expected == null ? check.ifNotExists() : check.ifEquals(Bytes.toBytes(expected))).thenPut(put);
+        }
+    }
+
+    public void ensureTable(String table) throws Exception {
+        try (Admin admin = connection.getAdmin()) {
+            TableName name = TableName.valueOf(table);
+            if (!admin.tableExists(name)) {
+                try {
+                    admin.createTable(TableDescriptorBuilder.newBuilder(name)
+                            .setColumnFamily(ColumnFamilyDescriptorBuilder.of("info")).build());
+                } catch (org.apache.hadoop.hbase.TableExistsException ignored) {
+                    // Another instance may have initialized the table concurrently.
+                }
+            }
+        }
+    }
+
     // 检查行是否存在（给注册验重用）
     public boolean exists(String table, String rowKey) throws Exception {
         try (Table t = connection.getTable(TableName.valueOf(table))) {

@@ -110,7 +110,7 @@
 <script>
 injectNavbar('user-home');
 
-var username = localStorage.getItem('recruit_username') || 'admin';
+var username = localStorage.getItem('recruit_username') || '';
 document.getElementById('userName').textContent = username;
 
 async function loadProfile() {

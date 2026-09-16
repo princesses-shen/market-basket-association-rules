@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>账号安全管理 · 智聘</title><link rel="stylesheet" href="/css/style.css">
+<style>
+main{max-width:1180px;margin:32px auto;padding:0 20px}h1{font-size:26px;margin-bottom:10px}.hint{color:var(--text-light);line-height:1.7}
+.panel{background:#fff;border:1px solid var(--border);border-radius:12px;padding:24px;margin-top:24px}
+.filters{display:flex;flex-wrap:wrap;align-items:end;gap:16px}.filters label{display:block;font-size:13px;margin-bottom:6px}
+input,select,button{padding:10px 14px;border:1px solid var(--border);border-radius:6px;font:inherit}button{background:var(--primary);color:#fff;border:0;cursor:pointer}button:disabled{opacity:.5;cursor:default}
+.table-scroll{overflow-x:auto;margin-top:16px}table{width:100%;border-collapse:collapse;text-align:left;white-space:nowrap}th,td{padding:14px 12px;border-bottom:1px solid var(--border);font-size:14px}th{background:var(--bg)}.blocked{color:#b42318;font-weight:600}
+.pager{display:flex;align-items:center;justify-content:flex-end;gap:16px;margin-top:20px}#message{min-height:24px;color:#b42318}
+</style></head>
+<body><div id="navbar-container"></div>
+<main><h1>账号安全管理</h1><p class="hint">用户与企业账号连续输错密码 5 次后封禁。解封会清零错误次数，账号需重新登录。</p>
+<section class="panel"><form class="filters" id="filters">
+<div><label for="accountType">账号类型</label><select id="accountType"><option value="all">全部类型</option><option value="user">用户</option><option value="company">企业</option></select></div>
+<div><label for="keyword">账号关键词</label><input id="keyword" placeholder="输入账号名" maxlength="64"></div>
+<div><label for="status">账号状态</label><select id="status"><option value="all">全部状态</option><option value="blocked">已封禁</option><option value="active">正常</option></select></div>
+<button id="search" type="submit">查询</button></form>
+<p id="message" role="status" aria-live="polite"></p>
+<div class="table-scroll"><table><thead><tr><th>类型</th><th>账号</th><th>注册邮箱</th><th>失败次数</th><th>状态</th><th>封禁时间</th><th>操作</th></tr></thead><tbody id="accounts"></tbody></table></div>
+<div class="pager"><span id="count"></span><button id="previous">上一页</button><span id="pageLabel"></span><button id="next">下一页</button></div>
+</section></main>
+<script src="/js/common.js"></script>
+<script>
+injectNavbar('admin');
+var page = 1, size = 20, total = 0, requestId = 0;
+var el = id => document.getElementById(id);
+function cell(row, value, className) { var td = document.createElement('td'); td.textContent = value; if (className) td.className = className; row.appendChild(td); return td; }
+async function loadAccounts(notice) {
+  var id = ++requestId;
+  el('search').disabled = true; el('message').textContent = notice || '正在加载…';
+  el('previous').disabled = true; el('next').disabled = true;
+  try {
+    var query = new URLSearchParams({accountType:el('accountType').value, keyword:el('keyword').value.trim(), status:el('status').value, page, size});
+    var result = await api('/api/admin/accounts?' + query);
+    if (id !== requestId) return;
+    if (result.code !== 0) throw new Error(result.msg);
+    total = result.total;
+    if (page > 1 && (page - 1) * size >= total) { page--; return loadAccounts(notice); }
+    el('accounts').replaceChildren();
+    result.items.forEach(function (item) {
+      var row = document.createElement('tr');
+      cell(row, item.accountType === 'company' ? '企业' : '用户'); cell(row, item.username); cell(row, item.email || '未绑定');
+      cell(row, item.failedAttempts); cell(row, item.blocked ? '已封禁' : '正常', item.blocked ? 'blocked' : '');
+      cell(row, item.blockedAt ? new Date(Number(item.blockedAt)).toLocaleString('zh-CN') : '—');
+      var actions = cell(row, item.blocked ? '' : '—');
+      if (item.blocked) {
+        var button = document.createElement('button'); button.textContent = '解封';
+        button.addEventListener('click', async function () {
+          button.disabled = true;
+          try {
+            var response = await api('/api/admin/accounts/unlock', {method:'POST', body:JSON.stringify({accountType:item.accountType, username:item.username})});
+            if (response.code !== 0) throw new Error(response.msg);
+            await loadAccounts(response.msg);
+          } catch (error) { el('message').textContent = error.message; button.disabled = false; }
+        }); actions.appendChild(button);
+      }
+      el('accounts').appendChild(row);
+    });
+    el('message').textContent = notice || (total ? '' : '没有符合条件的账号');
+    el('count').textContent = '共 ' + total + ' 个账号'; el('pageLabel').textContent = page + ' / ' + Math.max(1, Math.ceil(total / size));
+    el('previous').disabled = page <= 1; el('next').disabled = page * size >= total;
+  } catch (error) { el('message').textContent = error.message || '加载失败，请重试'; }
+  finally { if (id === requestId) el('search').disabled = false; }
+}
+el('filters').addEventListener('submit', event => { event.preventDefault(); page = 1; loadAccounts(); });
+el('previous').addEventListener('click', () => { if (page > 1) { page--; loadAccounts(); } });
+el('next').addEventListener('click', () => { if (page * size < total) { page++; loadAccounts(); } });
+if (getToken() && localStorage.getItem('recruit_role') === 'admin') loadAccounts();
+</script></body></html>

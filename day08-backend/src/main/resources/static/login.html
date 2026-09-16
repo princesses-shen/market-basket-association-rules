@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>登录 · 智聘</title>
 <link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="/css/email-auth.css">
 </head>
 <body>
 <div id="navbar-container"></div>
@@ -14,29 +15,49 @@
     <div class="login-tabs">
       <button class="login-tab active" onclick="switchTab('user')">用户登录</button>
       <button class="login-tab" onclick="switchTab('company')">企业登录</button>
+      <button class="login-tab" onclick="switchTab('admin')">管理员登录</button>
     </div>
 
     <!-- 用户登录 -->
     <div id="userPanel" class="login-panel active">
       <h2>欢迎回来</h2>
       <p class="login-hint">登录后查看岗位、管理简历</p>
+      <div class="auth-mode" role="group" aria-label="登录方式"><button id="userPasswordMode" type="button" aria-pressed="true" onclick="switchMode('user', 'password')">密码登录</button><button id="userEmailMode" type="button" aria-pressed="false" onclick="switchMode('user', 'email')">邮箱验证码登录</button></div>
       <input type="text" id="userUsername" placeholder="用户名" class="login-input">
       <input type="password" id="userPassword" placeholder="密码" class="login-input">
+      <div id="userEmailFields" hidden>
+<input type="email" id="userEmail" placeholder="注册邮箱" aria-label="注册邮箱" autocomplete="email" required class="login-input">
+<div class="email-code-row"><input id="userCode" class="login-input" placeholder="6 位邮箱验证码" aria-label="邮箱验证码" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}"><button id="userSendCode" class="email-send" type="button">发送验证码</button></div>
+</div>
       <button class="login-btn" onclick="userLogin()">登录</button>
       <p class="login-tip">没有账号? <a href="/register.html">立即注册</a></p>
-      <p class="login-test">测试: admin / 123456</p>
+      <p class="login-tip"><a href="/forgot-password.html?type=user">忘记密码？</a></p>
     </div>
 
     <!-- 企业登录 -->
     <div id="companyPanel" class="login-panel">
       <h2>企业登录</h2>
       <p class="login-hint">登录后管理岗位、浏览人才</p>
+      <div class="auth-mode" role="group" aria-label="登录方式"><button id="compPasswordMode" type="button" aria-pressed="true" onclick="switchMode('company', 'password')">密码登录</button><button id="compEmailMode" type="button" aria-pressed="false" onclick="switchMode('company', 'email')">邮箱验证码登录</button></div>
       <input type="text" id="compUsername" placeholder="企业账号" class="login-input">
       <input type="password" id="compPassword" placeholder="密码" class="login-input">
+      <div id="compEmailFields" hidden>
+<input type="email" id="compEmail" placeholder="注册邮箱" aria-label="注册邮箱" autocomplete="email" required class="login-input">
+<div class="email-code-row"><input id="compCode" class="login-input" placeholder="6 位邮箱验证码" aria-label="邮箱验证码" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}"><button id="compSendCode" class="email-send" type="button">发送验证码</button></div>
+</div>
       <button class="login-btn" onclick="companyLogin()">登录</button>
       <p class="login-tip">没有企业账号? <a href="/register.html?type=company">立即注册</a></p>
-      <p class="login-test">测试: demo_co / 123456</p>
+      <p class="login-tip"><a href="/forgot-password.html?type=company">忘记密码？</a></p>
     </div>
+    <div id="adminPanel" class="login-panel">
+      <h2>管理员登录</h2>
+      <p class="login-hint">管理账号安全状态与解封申请</p>
+      <input type="text" id="adminUsername" placeholder="管理员账号" aria-label="管理员账号" autocomplete="username" class="login-input">
+      <input type="password" id="adminPassword" placeholder="密码" aria-label="管理员密码" autocomplete="current-password" class="login-input">
+      <button class="login-btn" onclick="adminLogin()">登录</button>
+      <p class="login-tip">管理员账号由系统初始化，不开放注册</p>
+    </div>
+    <p id="loginMessage" role="status" aria-live="polite" style="color:#b42318;margin-top:16px"></p>
   </div>
 </div>
 
@@ -52,7 +73,9 @@
   background: #fff;
   border-radius: 16px;
   padding: 40px;
-  width: 420px;
+  width: 460px;
+  max-width: calc(100vw - 32px);
+  box-sizing: border-box;
   box-shadow: 0 10px 40px rgba(0,0,0,0.2);
 }
 .login-tabs {
@@ -110,67 +133,78 @@
 </style>
 
 <script src="/js/common.js"></script>
+<script src="/js/email-code.js"></script>
 <script>
 injectNavbar('login');
+var loginModes = {user:'password', company:'password', admin:'password'};
+var loginForms = {};
 
 function switchTab(type) {
-  document.querySelectorAll('.login-tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.login-panel').forEach(p => p.classList.remove('active'));
-  if (type === 'user') {
-    document.querySelectorAll('.login-tab')[0].classList.add('active');
-    document.getElementById('userPanel').classList.add('active');
-  } else {
-    document.querySelectorAll('.login-tab')[1].classList.add('active');
-    document.getElementById('companyPanel').classList.add('active');
-  }
+  ['user','company','admin'].forEach(function (name, index) {
+    document.querySelectorAll('.login-tab')[index].classList.toggle('active', name === type);
+    document.getElementById(name + 'Panel').classList.toggle('active', name === type);
+  });
+  Object.values(loginForms).forEach(form => form.clear());
+  document.getElementById('loginMessage').textContent = '';
 }
-
-async function userLogin() {
-  var username = document.getElementById('userUsername').value;
-  var password = document.getElementById('userPassword').value;
-  if (!username || !password) { alert('请输入用户名和密码'); return; }
-  var res = await fetch('/api/user/login', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({username: username, password: password})
-  }).then(r => r.json());
-  if (res.code === 0) {
-    localStorage.setItem('recruit_username', username);
-    localStorage.setItem('recruit_role', 'user');
-    if (res.token) localStorage.setItem('recruit_token', res.token);
-    location.href = '/user/index.html';
-  } else {
-    alert(res.msg);
-  }
+async function login(type, prefix) {
+  var username = document.getElementById(prefix + 'Username').value.trim();
+  var password = document.getElementById(prefix + 'Password').value;
+  var message = document.getElementById('loginMessage');
+  var emailMode = loginModes[type] === 'email';
+  var email = emailMode ? document.getElementById(prefix + 'Email').value.trim() : '';
+  var code = emailMode ? document.getElementById(prefix + 'Code').value.trim() : '';
+  if (emailMode && (!username || !email || !document.getElementById(prefix + 'Email').checkValidity() || !/^[0-9]{6}$/.test(code))) { message.textContent = '请输入账号、注册邮箱和 6 位验证码'; return; }
+  if (!emailMode && (!username || !password)) { message.textContent = '请输入账号和密码'; return; }
+  var button = document.querySelector('#' + type + 'Panel .login-btn');
+  if (button.disabled) return;
+  button.disabled = true;
+  message.textContent = '正在登录…';
+  try {
+    var result = await api(emailMode ? '/api/auth/email-login/confirm' : '/api/' + type + '/login',
+      {method:'POST', body:JSON.stringify(emailMode ? {accountType:type, username, email, code} : {username, password})});
+    if (result.code === 0) saveLogin(result);
+    else message.textContent = result.msg || '登录失败，请重试';
+  } catch (error) { message.textContent = error.message || '网络连接失败，请稍后重试'; }
+  finally { button.disabled = false; }
 }
-
-async function companyLogin() {
-  var username = document.getElementById('compUsername').value;
-  var password = document.getElementById('compPassword').value;
-  if (!username || !password) { alert('请输入企业账号和密码'); return; }
-  var res = await fetch('/api/company/login', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({username: username, password: password})
-  }).then(r => r.json());
-  if (res.code === 0) {
-    localStorage.setItem('recruit_username', username);
-    localStorage.setItem('recruit_role', 'company');
-    localStorage.setItem('recruit_company', res.company_name || username);
-    if (res.token) localStorage.setItem('recruit_token', res.token);
-    location.href = '/company/index.html';
-  } else {
-    alert(res.msg);
-  }
-}
-
-// Enter 提交
-document.getElementById('userPassword').addEventListener('keypress', function(e) {
-  if (e.key === 'Enter') userLogin();
+function userLogin() { return login('user', 'user'); }
+function companyLogin() { return login('company', 'comp'); }
+function adminLogin() { return login('admin', 'admin'); }
+['user','comp','admin'].forEach(function(prefix) {
+  document.getElementById(prefix + 'Password').addEventListener('keydown', function(event) {
+    if (event.key === 'Enter') {
+      var button = this.closest('.login-panel').querySelector('.login-btn');
+      if (!button.disabled) button.click();
+    }
+  });
 });
-document.getElementById('compPassword').addEventListener('keypress', function(e) {
-  if (e.key === 'Enter') companyLogin();
+function switchMode(type, mode) {
+  var prefix = type === 'user' ? 'user' : 'comp';
+  loginModes[type] = mode;
+  document.getElementById(prefix + 'Password').hidden = mode === 'email';
+  document.getElementById(prefix + 'EmailFields').hidden = mode !== 'email';
+  document.getElementById(prefix + 'PasswordMode').setAttribute('aria-pressed', String(mode === 'password'));
+  document.getElementById(prefix + 'EmailMode').setAttribute('aria-pressed', String(mode === 'email'));
+  loginForms[type].clear();
+}
+['user','company'].forEach(function (type) {
+  var prefix = type === 'user' ? 'user' : 'comp';
+  loginForms[type] = emailCodeForm({button:prefix+'SendCode', code:prefix+'Code', message:'loginMessage',
+    path:'/api/auth/email-login/code', fields:[prefix+'Username',prefix+'Email'],
+    identity:() => ({accountType:type, username:document.getElementById(prefix+'Username').value.trim(), email:document.getElementById(prefix+'Email').value.trim()}),
+    valid:() => document.getElementById(prefix+'Email').checkValidity()});
+  document.getElementById(prefix+'Code').addEventListener('keydown', function(event) {
+    if (event.key === 'Enter') login(type, prefix);
+  });
 });
+var selectedType = new URLSearchParams(location.search).get('type');
+if (['user','company','admin'].includes(selectedType)) switchTab(selectedType);
+var expiredMessage = sessionStorage.getItem('recruit_login_message');
+if (expiredMessage) {
+  document.getElementById('loginMessage').textContent = expiredMessage;
+  sessionStorage.removeItem('recruit_login_message');
+}
 </script>
 </body>
 </html>

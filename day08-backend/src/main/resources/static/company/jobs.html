@@ -86,7 +86,7 @@
 <script src="/js/common.js"></script>
 <script>
 injectNavbar('company-jobs');
-var username = localStorage.getItem('recruit_username') || 'demo_co';
+var username = localStorage.getItem('recruit_username') || '';
 
 async function loadJobs() {
   var jobs = await fetch('/api/company/jobs?username=' + username).then(r => r.json());

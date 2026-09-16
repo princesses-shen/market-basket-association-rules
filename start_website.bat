@@ -94,7 +94,7 @@ powershell -NoProfile -Command "try{Invoke-WebRequest -Uri 'http://%VM_IP%:%BACK
 if errorlevel 1 (
     echo   Not running. Starting it over SSH ...
     call :log "[3/6] not running, starting jar"
-    ssh %SSH_OPTS% %VM_USER%@%VM_IP% "cd $HOME/day08 && export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64 && export PATH=$JAVA_HOME/bin:$PATH && nohup java -jar target/demo-0.0.1-SNAPSHOT.jar > app.log 2>&1 < /dev/null &" >nul 2>&1
+    ssh %SSH_OPTS% %VM_USER%@%VM_IP% "cd $HOME/day08 && export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64 && export PATH=$JAVA_HOME/bin:$PATH && . $HOME/day08/deploy/run/account_env.sh && nohup java -jar target/demo-0.0.1-SNAPSHOT.jar > app.log 2>&1 < /dev/null &" >nul 2>&1
     echo   Waiting 25s for Spring Boot ...
     timeout /t 25 /nobreak >nul
 ) else (

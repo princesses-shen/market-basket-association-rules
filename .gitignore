@@ -30,3 +30,9 @@ config/local.env
 
 # ---- WorkBuddy 本地工作状态（含机器相关路径，不入库）----
 .workbuddy/
+
+# Java build and account attachment runtime data
+day08-backend/target/
+day08-backend/uploads/
+uploads/
+config/account-security.env

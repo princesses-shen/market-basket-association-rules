@@ -228,11 +228,14 @@ public class ChatService {
     public Map<String, Object> removeFromTalentPool(String companyUsername, String userUsername) throws Exception {
         Map<String, Object> result = new HashMap<>();
         String key = "talent_" + companyUsername + "_" + userUsername;
-        if (!hbase.exists(TBL_TALENT_POOL, key)) {
+        Map<String, String> talent = hbase.getRow(TBL_TALENT_POOL, key, CF);
+        if (talent == null) {
             result.put("code", 1);
             result.put("msg", "该用户不在人才库中");
             return result;
         }
+        if (!companyUsername.equals(talent.get("companyUsername")) || !userUsername.equals(talent.get("userUsername")))
+            throw new org.springframework.security.access.AccessDeniedException("无权操作其他企业的人才库");
         hbase.deleteRow(TBL_TALENT_POOL, key);
         result.put("code", 0);
         result.put("msg", "已从人才库移除");

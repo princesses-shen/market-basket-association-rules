@@ -19,51 +19,21 @@ public class CompanyService {
     private static final String TABLE_JOB = "recruit_job";
     private static final String CF = "info";
 
-    // 企业注册
-    public Map<String, Object> register(String username, String password, String companyName, String industry, String city, String scale) throws Exception {
-        Map<String, Object> result = new HashMap<>();
-        if (hbase.exists(TABLE_COMPANY, username)) {
-            result.put("code", 1);
-            result.put("msg", "企业账号已存在");
-            return result;
-        }
-        // 简单 hash (与 UserService 一致, SHA-256)
-        String hash = sha256(password);
-        Map<String, String> data = new HashMap<>();
-        data.put("password_hash", hash);
-        data.put("company_name", companyName);
-        data.put("industry", industry);
-        data.put("city", city);
-        data.put("scale", scale);
-        data.put("created_time", new Date().toString());
-        hbase.putRow(TABLE_COMPANY, username, CF, data);
-        result.put("code", 0);
-        result.put("msg", "企业注册成功");
-        return result;
-    }
+    @Autowired
+    private AccountSecurityService accounts;
+    @Autowired
+    private EmailAuthService emailAuth;
 
-    // 企业登录
+    // 注册和登录统一使用持久化账号安全状态。
+    public Map<String, Object> register(String username, String password, String companyName,
+            String industry, String city, String scale, String email, String code) throws Exception {
+        if (companyName == null || companyName.isBlank()) throw new IllegalArgumentException("请填写公司名称");
+        return emailAuth.register(com.example.demo.security.AccountType.company, username, password, email, code,
+                Map.of("company_name", companyName, "industry", industry, "city", city, "scale", scale,
+                        "created_time", new Date().toString()));
+    }
     public Map<String, Object> login(String username, String password) throws Exception {
-        Map<String, Object> result = new HashMap<>();
-        Map<String, String> company = hbase.getRow(TABLE_COMPANY, username, CF);
-        if (company == null || company.isEmpty()) {
-            result.put("code", 1);
-            result.put("msg", "企业账号不存在");
-            return result;
-        }
-        String storedHash = company.get("password_hash");
-        String inputHash = sha256(password);
-        if (!storedHash.equals(inputHash)) {
-            result.put("code", 1);
-            result.put("msg", "密码错误");
-            return result;
-        }
-        result.put("code", 0);
-        result.put("msg", "登录成功");
-        result.put("username", username);
-        result.put("company_name", company.get("company_name"));
-        result.put("role", "company");
-        return result;
+        return accounts.login(com.example.demo.security.AccountType.company, username, password);
     }
 
     // 企业发布岗位
@@ -134,10 +104,11 @@ public class CompanyService {
     }
 
     // 浏览人才 (读 recruit_talent_pool 表，只显示企业已加入的人才库)
-    public List<Map<String, String>> browseTalent(String keyword, String city, int limit) throws Exception {
+    public List<Map<String, String>> browseTalent(String companyUsername, String keyword, String city, int limit) throws Exception {
         List<Map<String, String>> pool = hbase.scanAll("recruit_talent_pool", CF);
         List<Map<String, String>> filtered = new ArrayList<>();
         for (Map<String, String> t : pool) {
+            if (!companyUsername.equals(t.get("companyUsername"))) continue;
             String userUsername = t.getOrDefault("userUsername", "");
             Map<String, String> resume = hbase.getRow("recruit_resume", "user_" + userUsername, CF);
             if (resume == null) continue;
@@ -155,15 +126,4 @@ public class CompanyService {
         return filtered;
     }
 
-    private String sha256(String input) {
-        try {
-            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
-            byte[] hash = md.digest(input.getBytes("UTF-8"));
-            StringBuilder sb = new StringBuilder();
-            for (byte b : hash) sb.append(String.format("%02x", b));
-            return sb.toString();
-        } catch (Exception e) {
-            return input;
-        }
-    }
 }

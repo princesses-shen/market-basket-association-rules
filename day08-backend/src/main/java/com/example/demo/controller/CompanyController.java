@@ -20,7 +20,7 @@ public class CompanyController {
         return companyService.register(
                 body.get("username"), body.get("password"), body.get("companyName"),
                 body.getOrDefault("industry", ""), body.getOrDefault("city", ""),
-                body.getOrDefault("scale", ""));
+                body.getOrDefault("scale", ""), body.get("email"), body.get("code"));
     }
 
     // POST /api/company/login
@@ -31,9 +31,9 @@ public class CompanyController {
 
     // POST /api/company/job/publish
     @PostMapping("/job/publish")
-    public Map<String, Object> publishJob(@RequestBody Map<String, String> body) throws Exception {
+    public Map<String, Object> publishJob(@RequestBody Map<String, String> body, java.security.Principal principal) throws Exception {
         return companyService.publishJob(
-                body.get("username"), body.get("title"), body.get("city"),
+                principal.getName(), body.get("title"), body.get("city"),
                 Integer.parseInt(body.get("salaryLow")), Integer.parseInt(body.get("salaryHigh")),
                 body.get("edu"), body.get("exp"), body.get("tags"),
                 body.getOrDefault("category", ""), body.getOrDefault("desc", ""));
@@ -41,14 +41,14 @@ public class CompanyController {
 
     // POST /api/company/job/recall
     @PostMapping("/job/recall")
-    public Map<String, Object> recallJob(@RequestBody Map<String, String> body) throws Exception {
-        return companyService.recallJob(body.get("username"), body.get("jobId"));
+    public Map<String, Object> recallJob(@RequestBody Map<String, String> body, java.security.Principal principal) throws Exception {
+        return companyService.recallJob(principal.getName(), body.get("jobId"));
     }
 
     // GET /api/company/jobs?username=
     @GetMapping("/jobs")
-    public List<Map<String, String>> myJobs(@RequestParam String username) throws Exception {
-        return companyService.myJobs(username);
+    public List<Map<String, String>> myJobs(java.security.Principal principal) throws Exception {
+        return companyService.myJobs(principal.getName());
     }
 
     // GET /api/company/talent?keyword=&city=&limit=
@@ -56,7 +56,7 @@ public class CompanyController {
     public List<Map<String, String>> talent(
             @RequestParam(defaultValue = "") String keyword,
             @RequestParam(defaultValue = "全部") String city,
-            @RequestParam(defaultValue = "50") int limit) throws Exception {
-        return companyService.browseTalent(keyword, city, limit);
+            @RequestParam(defaultValue = "50") int limit, java.security.Principal principal) throws Exception {
+        return companyService.browseTalent(principal.getName(), keyword, city, Math.max(1, Math.min(limit, 200)));
     }
 }

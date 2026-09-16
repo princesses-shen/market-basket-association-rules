@@ -16,31 +16,21 @@ public class UserController {
 
     // POST /api/user/register  { username, password, email }
     @PostMapping("/register")
-    public Map<String, Object> register(@RequestBody Map<String, String> body) {
+    public Map<String, Object> register(@RequestBody Map<String, String> body) throws Exception {
         String username = body.get("username");
         String password = body.get("password");
         String email = body.get("email");
-        return userService.register(username, password, email);
+        return userService.register(username, password, email, body.get("code"));
     }
 
     // POST /api/user/login  { username, password }
     @PostMapping("/login")
-    public Map<String, Object> login(@RequestBody Map<String, String> body) {
+    public Map<String, Object> login(@RequestBody Map<String, String> body) throws Exception {
         return userService.login(body.get("username"), body.get("password"));
     }
 
-    @Autowired
-    private com.example.demo.util.JwtUtil jwtUtil;
-
-    // GET /api/user/profile  (需 JWT)
     @GetMapping("/profile")
-    public Map<String, String> profile(@RequestHeader(value="Authorization", required=false) String auth) {
-        if (auth == null || !auth.startsWith("Bearer ")) {
-            return Map.of("error", "未登录");
-        }
-        String token = auth.substring(7);
-        io.jsonwebtoken.Claims c = jwtUtil.validateToken(token);
-        if (c == null) return Map.of("error", "token无效");
-        return userService.profile(c.getSubject());
+    public Map<String, String> profile(java.security.Principal principal) throws Exception {
+        return userService.profile(principal.getName());
     }
 }
