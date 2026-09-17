@@ -14,7 +14,7 @@ public class JobController {
     @Autowired
     private HBaseService hbase;
 
-    // GET /api/job/search?city=&salaryMin=&salaryMax=&keyword=&category=&edu=&page=&size=
+    // GET /api/job/search?city=&salaryMin=&salaryMax=&keyword=&category=&page=&size=
     @GetMapping("/search")
     public Map<String, Object> search(
             @RequestParam(defaultValue = "") String city,
@@ -22,11 +22,10 @@ public class JobController {
             @RequestParam(defaultValue = "0") int salaryMax,
             @RequestParam(defaultValue = "") String keyword,
             @RequestParam(defaultValue = "全部") String category,
-            @RequestParam(defaultValue = "全部") String edu,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) throws Exception {
 
-        List<Map<String,String>> all = hbase.scanJobs(city, salaryMin, salaryMax, keyword, category, edu, 0);
+        List<Map<String,String>> all = hbase.scanJobs(city, salaryMin, salaryMax, keyword, category, 0);
         int total = all.size();
         int start = (page - 1) * size;
         int end = Math.min(start + size, total);
@@ -58,7 +57,7 @@ public class JobController {
     // GET /api/job/featured  首页推荐 6 条
     @GetMapping("/featured")
     public List<Map<String,String>> featured() throws Exception {
-        return hbase.scanJobs("", 0, 0, "", "全部", "全部", 6);
+        return hbase.scanJobs("", 0, 0, "", "全部", 6);
     }
 
     // GET /api/job/cities  城市列表（从 position 表读）

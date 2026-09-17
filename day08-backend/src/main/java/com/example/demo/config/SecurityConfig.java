@@ -5,6 +5,7 @@ import com.example.demo.service.HBaseService;
 import com.example.demo.util.JwtUtil;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -38,6 +39,10 @@ public class SecurityConfig {
                 .antMatchers("/api/resume/**", "/api/chat/**", "/uploads/**").hasAnyRole("USER", "COMPANY")
                 .antMatchers("/api/stats/**", "/api/rules/**", "/api/job/**", "/api/hello", "/api/predict",
                         "/api/meta", "/api/overview").permitAll()
+                // 求职论坛（origin/main 新增）：浏览类接口公开，点赞公开计数，发评论需要登录身份。
+                .antMatchers(HttpMethod.GET, "/api/forum/**").permitAll()
+                .antMatchers("/api/forum/like/**").permitAll()
+                .antMatchers("/api/forum/**").hasAnyRole("USER", "COMPANY")
                 // Protect APIs before allowing static file extensions.
                 .antMatchers("/api/**").authenticated()
                 .antMatchers("/", "/error", "/**/*.html", "/**/*.js", "/**/*.css", "/**/*.png", "/**/*.jpg",

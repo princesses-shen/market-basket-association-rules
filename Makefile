@@ -3,7 +3,7 @@
 
 PY ?= python
 
-.PHONY: test crawl merge model gen-data serve backup clean
+.PHONY: test crawl merge model agg gen-data serve backup clean
 
 # 数据契约校验 (10列 v1.1.0, 要求 PASS)
 test:
@@ -21,19 +21,17 @@ merge:
 model:
 	$(PY) src/analysis/train.py
 
+# 聚合生成 HBase 统计表 (recruit_position/salary/keyword/tier)
+agg:
+	$(PY) src/agg/agg_hbase.py
+
 # 种子数据 (教学兜底, 不与真实采集混淆)
 gen-data:
 	$(PY) src/ingest/generate.py
 
-# 生成 1200 条岗位 + 测试用户, 直接灌入 HBase (需要 config/local.env 里的 HBASE_HOST)
-hbase-data:
-	$(PY) scripts/gen_data.py
-
-# 提示虚拟机统一入口（地址读 config/local.env，该文件不入库；注意去掉 CRLF 的 \r）
+# 提示虚拟机统一入口
 serve:
-	@IP=$$(sed -n 's/^VM_HOST=//p' config/local.env 2>/dev/null | head -1 | tr -d '\r'); \
-	IP=$${IP:-127.0.0.1}; \
-	echo ">>> 访问入口: http://$$IP:8080"
+	@echo ">>> 访问入口: http://192.168.92.128:8080"
 	@echo ">>> 测试账号: admin / 123456"
 
 # 全量备份

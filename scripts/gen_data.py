@@ -1,20 +1,16 @@
 # -*- coding: utf-8 -*-
 """
 生成 1200 条岗位 + 5 个测试用户，灌入 HBase。
-用 happybase 连 config/local.env 里配置的 HBase Thrift 地址。
+用 happybase 连虚拟机 192.168.92.128:9090。
 """
+import os
 import happybase
 import hashlib
-import os
 import random
-import sys
 import time
 from datetime import datetime, timedelta
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import config
-
-HOST = config.HBASE_HOST; PORT = config.HBASE_PORT
+HOST = os.environ.get("HBASE_HOST", "192.168.92.128"); PORT = int(os.environ.get("HBASE_PORT", "9090"))
 
 # 数据池
 CITIES = ["北京", "上海", "广州", "深圳", "杭州", "成都", "南京", "武汉", "西安", "长沙", "苏州", "重庆", "天津", "青岛", "厦门"]

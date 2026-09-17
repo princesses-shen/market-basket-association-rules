@@ -11,8 +11,6 @@ function getToken() {
 function logout() {
   localStorage.removeItem('recruit_token');
   localStorage.removeItem('recruit_username');
-  localStorage.removeItem('recruit_role');
-  localStorage.removeItem('recruit_company');
   location.href = '/index.html';
 }
 
@@ -97,28 +95,33 @@ function escapeHtml(value) {
   return String(value == null ? '' : value).replace(/[&<>"']/g, c => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[c]));
 }
 
-// 注入导航栏 (按角色区分)
+// 注入导航栏
 function injectNavbar(activePage) {
   var user = currentUser();
   var role = localStorage.getItem('recruit_role') || 'user';
+  // 求职咨询（origin/main 新增板块）对所有角色可见。
+  var forumLink = '<a href="/forum.html"' + (activePage==='forum'?' class="active"':'') + '>求职咨询</a>';
   var menuHtml = '';
   if (role === 'admin') {
-    menuHtml = '<a href="/admin/index.html" class="active">账号安全管理</a>';
+    menuHtml =
+      '<a href="/index.html"' + (activePage==='home'?' class="active"':'') + '>首页</a>'
+      + '<a href="/admin/index.html"' + (activePage==='admin'?' class="active"':'') + '>账号安全管理</a>';
   } else if (role === 'company') {
     menuHtml =
       '<a href="/company/index.html"' + (activePage==='company-home'?' class="active"':'') + '>企业主页</a>'
       + '<a href="/company/jobs.html"' + (activePage==='company-jobs'?' class="active"':'') + '>岗位管理</a>'
       + '<a href="/company/talent.html"' + (activePage==='company-talent'?' class="active"':'') + '>人才浏览</a>'
       + '<a href="/company/chat.html"' + (activePage==='company-chat'?' class="active"':'') + '>消息中心</a>'
+      + forumLink
       + '<a href="/dashboard.html"' + (activePage==='dashboard'?' class="active"':'') + '>数据大屏</a>';
   } else {
     menuHtml =
       '<a href="/index.html"' + (activePage==='home'?' class="active"':'') + '>首页</a>'
       + '<a href="/search.html"' + (activePage==='search'?' class="active"':'') + '>找工作</a>'
+      + forumLink
       + '<a href="/user/index.html"' + (activePage==='user-home'?' class="active"':'') + '>个人主页</a>'
       + '<a href="/user/resume.html"' + (activePage==='user-resume'?' class="active"':'') + '>我的简历</a>'
       + '<a href="/user/chat.html"' + (activePage==='user-chat'?' class="active"':'') + '>我的消息</a>'
-      + '<a href="/predict.html"' + (activePage==='predict'?' class="active"':'') + '>薪资预测</a>'
       + '<a href="/dashboard.html"' + (activePage==='dashboard'?' class="active"':'') + '>数据大屏</a>';
   }
   var userArea = user
@@ -164,3 +167,11 @@ function paginationHTML(page, totalPages) {
   h += '</div>';
   return h;
 }
+
+// 别名兼容
+var loadNav = injectNavbar;
+var getCurrentUser = function() {
+  var u = currentUser();
+  var t = getToken();
+  return u ? { username: u, token: t } : null;
+};

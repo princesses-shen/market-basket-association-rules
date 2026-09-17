@@ -25,6 +25,9 @@
 09-购物篮技能组合分析-关联规则/
 ├── config.py                 # Python 配置中心（路径 / 算法参数 / 加载私有配置）
 ├── main.py                   # 主入口：加载→编码→挖掘→规则→可视化→写回 HBase
+├── serve_website.py          # 纯 Python 版网站服务（无虚拟机时本地演示用，同样占用 8080）
+│                             # 注意：与 Spring Boot 端口相同，两者不要同时启动
+│                             # 需要演示求职论坛时优先用 Spring Boot（见第八章）
 ├── Makefile                  # 一键任务入口（test / crawl / merge / model / gen-data / hbase-data / serve）
 ├── requirements.txt          # 核心依赖（训练 / 清洗 / 预测）
 ├── requirements-collect.txt  # 采集专用依赖（playwright / scrapling）
@@ -65,7 +68,10 @@
 ├── tools/ssh_helper.py       # SSH 远程执行与文件传输
 ├── scripts/
 │   ├── deploy.py             # 一键部署到虚拟机（SFTP + mvn + 启动）
-│   └── gen_data.py           # 生成 1200 条岗位 + 测试用户，灌入 HBase
+│   ├── gen_data.py           # 生成 1200 条岗位 + 测试用户，灌入 HBase
+│   ├── gen_realistic_data.py # 生成贴近真实的招聘数据（天池数据集的本地替代）
+│   ├── import_tianchi_data.py# 导入天池岗位数据集（5000 条真实招聘数据）
+│   └── export_forum_json.py  # ★ 把 forum_data.py 导出为后端可读的 forum-data.json
 │
 ├── deploy/
 │   ├── setup/install_hadoop_hbase.sh   # 大数据层一键安装
@@ -698,3 +704,62 @@ bat 的 6 步逻辑：
 ## 账号邮件功能
 
 已支持用户和企业的注册邮箱验证、邮箱验证码登录及找回密码。使用 `start_backend.ps1 -Build` 启动，或 `start_backend.ps1 -SmtpTest` 单独验证 QQ SMTP。配置、接口和验收范围见 [QQ 邮箱与验证码登录](docs/QQ邮箱与验证码登录.md)。
+
+## 求职咨询论坛
+
+文章论坛形式的求职板块，讨论职场热点与求职攻略（对应需求 7）。
+
+| 页面 | 说明 |
+|------|------|
+| `/forum.html` | 分类筛选（7 个分类）+ 关键词搜索 + 分页，每页 8 篇 |
+| `/article.html?id=art_001` | 文章正文 + 点赞 + 评论 + 相关推荐 |
+
+后端接口由 `ForumController` 提供（`day08-backend/src/main/java/com/example/demo/controller/`），
+与原 `serve_website.py` 的 Python 版契约保持一致：
+
+| 方法 | 路径 | 说明 | 需登录 |
+|------|------|------|--------|
+| GET | `/api/forum/categories` | 分类列表 | 否 |
+| GET | `/api/forum/list` | 文章列表（`category` / `keyword` / `page` / `size`） | 否 |
+| GET | `/api/forum/detail/{id}` | 文章详情（阅读数 +1） | 否 |
+| GET | `/api/forum/comments/{id}` | 评论列表 | 否 |
+| POST | `/api/forum/like/{id}` | 点赞 | 否 |
+| POST | `/api/forum/comment/{id}` | 发表评论 | **是**（用户 / 企业） |
+
+内容源是 `src/serving/forum_data.py`（当前 6 篇文章 / 7 个分类 / 12 条内置评论）。
+**改完文章后必须重新导出再打包**，否则后端读到的还是旧数据：
+
+```bash
+python scripts/export_forum_json.py    # 生成 day08-backend/src/main/resources/forum-data.json
+```
+
+> 点赞数与新评论保存在后端内存里，进程重启后回到 JSON 初始值（与原 Python 版行为一致）。
+> 需要持久化的话，可把 `ForumController` 的读写改到 HBase 表。
+
+## 招聘信息爬虫
+
+`src/ingest/recruit_crawler.py`：BOSS直聘 / 拉勾的采集框架（对应需求 8），
+含请求限速、UA 轮换、无头浏览器与验证码降级处理。
+
+```bash
+pip install -r requirements-collect.txt     # 采集专用依赖（playwright / scrapling）
+
+# 真实抓取
+python src/ingest/recruit_crawler.py --mode crawl --site boss --pages 5 --headless
+
+# 或生成贴近真实的仿真数据（不联网）
+python src/ingest/recruit_crawler.py --mode generate --count 500
+```
+
+采集/生成结果统一落到 `data/clean/recruit_clean.tsv`（10 列契约，`make test` 校验），
+再经 `main.py` 挖掘关联规则。
+
+**没有可用数据集时**，用天池真实岗位数据替代：
+
+```bash
+python scripts/import_tianchi_data.py   # 天池数据集 221302，5000 条真实招聘数据
+python scripts/gen_realistic_data.py    # 或：本地生成仿真数据
+```
+
+数据来源：天池岗位数据集 <https://tianchi.aliyun.com/dataset/221302>（GPL 2.0）。
+

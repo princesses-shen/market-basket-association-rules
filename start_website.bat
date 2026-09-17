@@ -142,6 +142,7 @@ echo.
 echo ============================================
 echo   Done. Website: http://%VM_IP%:%BACKEND_PORT%/
 echo   Dashboard   : http://%VM_IP%:%BACKEND_PORT%/dashboard.html
+echo   Forum       : http://%VM_IP%:%BACKEND_PORT%/forum.html
 echo   Test account: admin / 123456
 echo   Full log    : %LOG%
 echo ============================================
