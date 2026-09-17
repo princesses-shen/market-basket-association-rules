@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>岗位管理 · 智聘企业</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="navbar-container"></div>
+
+<div class="page-container">
+  <h2 style="margin:24px 0;">岗位管理</h2>
+
+  <!-- 发布岗位 -->
+  <div class="card" style="margin-bottom:24px;">
+    <h3>发布新岗位</h3>
+    <div class="job-form">
+      <div class="form-row">
+        <input type="text" id="title" placeholder="岗位标题" class="form-field">
+        <select id="city" class="form-field">
+          <option value="">城市</option>
+          <option>北京</option><option>上海</option><option>广州</option><option>深圳</option>
+          <option>杭州</option><option>成都</option><option>南京</option><option>武汉</option>
+          <option>西安</option><option>长沙</option>
+        </select>
+        <select id="category" class="form-field">
+          <option value="">类别</option>
+          <option>后端开发</option><option>前端开发</option><option>测试</option>
+          <option>运维</option><option>数据</option><option>算法</option>
+          <option>产品</option><option>设计</option><option>安全</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <input type="number" id="salLow" placeholder="薪资下限(K)" class="form-field">
+        <input type="number" id="salHigh" placeholder="薪资上限(K)" class="form-field">
+        <select id="edu" class="form-field">
+          <option>不限</option><option>大专</option><option>本科</option><option>硕士</option><option>博士</option>
+        </select>
+        <select id="exp" class="form-field">
+          <option>应届</option><option>1年</option><option>1-3年</option>
+          <option>3-5年</option><option>5-10年</option><option>10年以上</option>
+        </select>
+      </div>
+      <input type="text" id="tags" placeholder="技能标签(分号分隔, 如 Java;Spring;MySQL)" class="form-field" style="width:100%;">
+      <textarea id="desc" placeholder="岗位描述" class="form-field" style="width:100%;min-height:80px;"></textarea>
+      <button class="btn-publish" onclick="publishJob()">发布岗位</button>
+    </div>
+  </div>
+
+  <!-- 已发布岗位 -->
+  <div class="card">
+    <h3>已发布岗位</h3>
+    <div id="jobList"></div>
+  </div>
+</div>
+
+<style>
+.page-container { max-width: 1000px; margin: 0 auto; padding: 0 24px; }
+.job-form { padding: 16px 0; }
+.form-row { display: flex; gap: 12px; margin-bottom: 12px; }
+.form-field {
+  flex: 1; padding: 10px 14px; border: 1px solid var(--border);
+  border-radius: 8px; font-size: 14px; outline: none;
+}
+.form-field:focus { border-color: var(--primary); }
+.btn-publish {
+  padding: 12px 32px; background: var(--primary); color: #fff;
+  border: none; border-radius: 8px; font-size: 15px; cursor: pointer;
+}
+.btn-publish:hover { background: var(--primary-dark); }
+.manage-job-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px 0; border-bottom: 1px solid var(--bg);
+}
+.manage-job-item:last-child { border: none; }
+.status-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px; }
+.status-tag.active { background: #d4edda; color: #155724; }
+.status-tag.recalled { background: #f8d7da; color: #721c24; }
+.btn-recall {
+  padding: 6px 16px; background: #fff; border: 1px solid #e74c3c;
+  color: #e74c3c; border-radius: 6px; cursor: pointer; font-size: 13px;
+}
+.btn-recall:hover { background: #e74c3c; color: #fff; }
+</style>
+
+<script src="/js/common.js"></script>
+<script>
+injectNavbar('company-jobs');
+var username = localStorage.getItem('recruit_username') || '';
+
+async function loadJobs() {
+  var jobs = await fetch('/api/company/jobs?username=' + username).then(r => r.json());
+  var el = document.getElementById('jobList');
+  if (jobs.length === 0) {
+    el.innerHTML = '<div style="text-align:center;padding:30px;color:#999;">还没有发布岗位</div>';
+    return;
+  }
+  el.innerHTML = jobs.map(j => {
+    var status = j.status || 'active';
+    return '<div class="manage-job-item">'
+      + '<div><div style="font-weight:600;">' + (j.title||'') + ' <span class="status-tag ' + status + '">' + (status==='active'?'在招':'已回收') + '</span></div>'
+      + '<div style="color:var(--text-light);font-size:13px;margin-top:4px;">' + (j.city||'') + ' · ' + (j.salary_low||0) + '-' + (j.salary_high||0) + 'K · ' + (j.edu||'') + ' · ' + (j.exp||'') + '</div></div>'
+      + (status === 'active' ? '<button class="btn-recall" onclick="recallJob(\'' + j.rowKey + '\')">回收</button>' : '<span style="color:#999;font-size:13px;">已回收</span>')
+      + '</div>';
+  }).join('');
+}
+
+async function publishJob() {
+  var body = {
+    username: username,
+    title: document.getElementById('title').value,
+    city: document.getElementById('city').value,
+    salaryLow: document.getElementById('salLow').value,
+    salaryHigh: document.getElementById('salHigh').value,
+    edu: document.getElementById('edu').value,
+    exp: document.getElementById('exp').value,
+    tags: document.getElementById('tags').value,
+    category: document.getElementById('category').value,
+    desc: document.getElementById('desc').value
+  };
+  if (!body.title || !body.city) { alert('请填写岗位标题和城市'); return; }
+  var res = await fetch('/api/company/job/publish', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body)
+  }).then(r => r.json());
+  if (res.code === 0) {
+    alert('发布成功！');
+    loadJobs();
+    // 清空表单
+    ['title','salLow','salHigh','tags','desc'].forEach(id => document.getElementById(id).value = '');
+  } else { alert(res.msg); }
+}
+
+async function recallJob(jobId) {
+  if (!confirm('确定回收此岗位?')) return;
+  var res = await fetch('/api/company/job/recall', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({username: username, jobId: jobId})
+  }).then(r => r.json());
+  if (res.code === 0) { alert('回收成功'); loadJobs(); }
+  else { alert(res.msg); }
+}
+
+loadJobs();
+</script>
+</body>
+</html>

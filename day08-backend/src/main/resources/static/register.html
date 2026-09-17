@@ -5,72 +5,145 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>注册 · 智聘</title>
 <link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="/css/email-auth.css">
 </head>
 <body>
-<div class="auth-page">
-  <div class="auth-card">
-    <h2>注册</h2>
-    <div class="alert alert-error" id="alertBox"></div>
-    <div class="alert alert-success" id="successBox"></div>
-    <div class="form-group">
-      <label>用户名</label>
-      <input type="text" id="username" placeholder="3-20位字符">
+<div id="navbar-container"></div>
+
+<div class="login-page">
+  <div class="login-card">
+    <div class="login-tabs">
+      <button class="login-tab active" onclick="switchTab('user')">用户注册</button>
+      <button class="login-tab" onclick="switchTab('company')">企业注册</button>
     </div>
-    <div class="form-group">
-      <label>密码</label>
-      <input type="password" id="password" placeholder="至少6位">
+
+    <!-- 用户注册 -->
+    <div id="userPanel" class="login-panel active">
+      <h2>加入智聘</h2>
+      <input type="text" id="userUsername" placeholder="用户名" class="login-input">
+      <input type="password" id="userPassword" placeholder="密码" class="login-input">
+      <input type="email" id="userEmail" placeholder="注册邮箱（必填，用于找回密码）" required class="login-input">
+      <div id="userEmailFields" >
+<div class="email-code-row"><input id="userCode" class="login-input" placeholder="6 位邮箱验证码" aria-label="邮箱验证码" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}"><button id="userSendCode" class="email-send" type="button">发送验证码</button></div>
+</div>
+      <button class="login-btn" onclick="userRegister()">注册</button>
+      <p class="login-tip">已有账号? <a href="/login.html">去登录</a></p>
     </div>
-    <div class="form-group">
-      <label>确认密码</label>
-      <input type="password" id="password2" placeholder="再输入一次">
+
+    <!-- 企业注册 -->
+    <div id="companyPanel" class="login-panel">
+      <h2>企业入驻</h2>
+      <input type="text" id="compUsername" placeholder="企业账号" class="login-input">
+      <input type="password" id="compPassword" placeholder="密码" class="login-input">
+      <input type="email" id="compEmail" placeholder="注册邮箱（必填，用于找回密码）" required class="login-input">
+      <input type="text" id="companyName" placeholder="公司名称" class="login-input">
+      <input type="text" id="industry" placeholder="所属行业 (如 互联网/金融/教育)" class="login-input">
+      <select id="compCity" class="login-input">
+        <option value="">选择城市</option>
+        <option>北京</option><option>上海</option><option>广州</option><option>深圳</option>
+        <option>杭州</option><option>成都</option><option>南京</option><option>武汉</option>
+      </select>
+      <select id="scale" class="login-input">
+        <option value="">公司规模</option>
+        <option>少于50人</option><option>50-150人</option><option>150-500人</option>
+        <option>500-2000人</option><option>2000人以上</option>
+      </select>
+      <div id="compEmailFields" >
+<div class="email-code-row"><input id="compCode" class="login-input" placeholder="6 位邮箱验证码" aria-label="邮箱验证码" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}"><button id="compSendCode" class="email-send" type="button">发送验证码</button></div>
+</div>
+      <button class="login-btn" onclick="companyRegister()">注册</button>
+      <p class="login-tip">已有企业账号? <a href="/login.html">去登录</a></p>
     </div>
-    <div class="form-group">
-      <label>邮箱（选填）</label>
-      <input type="text" id="email" placeholder="email@example.com">
-    </div>
-    <button class="btn-submit" onclick="doRegister()">注册</button>
-    <div class="auth-footer">
-      已有账号？<a href="/login.html">去登录</a>
-    </div>
+    <p id="registerMessage" class="auth-message" role="status" aria-live="polite"></p>
   </div>
 </div>
 
+<style>
+.login-page {
+  min-height: calc(100vh - 60px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 30px 0;
+}
+.login-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 40px;
+  width: 420px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+.login-tabs { display: flex; margin-bottom: 30px; border-bottom: 2px solid var(--bg); }
+.login-tab {
+  flex: 1; padding: 12px; border: none; background: none;
+  font-size: 16px; cursor: pointer; color: var(--text-light);
+  border-bottom: 3px solid transparent; transition: all .2s;
+}
+.login-tab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+.login-panel { display: none; }
+.login-panel.active { display: block; }
+.login-panel h2 { margin: 0 0 24px; font-size: 24px; }
+.login-input {
+  width: 100%; padding: 12px 16px; border: 1px solid var(--border);
+  border-radius: 8px; font-size: 14px; margin-bottom: 12px;
+  outline: none; box-sizing: border-box; transition: border-color .2s;
+}
+.login-input:focus { border-color: var(--primary); }
+.login-btn {
+  width: 100%; padding: 12px; background: var(--primary); color: #fff;
+  border: none; border-radius: 8px; font-size: 16px; cursor: pointer; margin-top: 8px;
+}
+.login-btn:hover { background: var(--primary-dark); }
+.login-tip { text-align: center; margin: 16px 0 0; font-size: 13px; }
+</style>
+
 <script src="/js/common.js"></script>
+<script src="/js/email-code.js"></script>
 <script>
-function showAlert(msg) {
-  var b = document.getElementById('alertBox');
-  b.textContent = msg;
-  b.className = 'alert alert-error show';
+injectNavbar('register');
+var registrationForms = {};
+function switchTab(type) {
+  ['user','company'].forEach(function (name, index) {
+    document.querySelectorAll('.login-tab')[index].classList.toggle('active', name === type);
+    document.getElementById(name + 'Panel').classList.toggle('active', name === type);
+  });
+  Object.values(registrationForms).forEach(form => form.clear());
 }
-
-async function doRegister() {
-  var username = document.getElementById('username').value.trim();
-  var password = document.getElementById('password').value;
-  var password2 = document.getElementById('password2').value;
-  var email = document.getElementById('email').value.trim();
-  if (!username || username.length < 3) { showAlert('用户名至少3个字符'); return; }
-  if (!password || password.length < 6) { showAlert('密码至少6位'); return; }
-  if (password !== password2) { showAlert('两次密码不一致'); return; }
-  try {
-    var res = await api('/api/user/register', {
-      method: 'POST',
-      body: JSON.stringify({ username: username, password: password, email: email })
-    });
-    if (res.success) {
-      localStorage.setItem('recruit_token', res.token);
-      localStorage.setItem('recruit_username', res.username);
-      location.href = '/index.html';
-    } else {
-      showAlert(res.msg || '注册失败');
-    }
-  } catch(e) {
-    showAlert('网络错误，请重试');
-  }
-}
-
-document.getElementById('password2').addEventListener('keypress', function(e) {
-  if (e.key === 'Enter') doRegister();
+['user','company'].forEach(function (type) {
+  var prefix = type === 'user' ? 'user' : 'comp';
+  registrationForms[type] = emailCodeForm({button:prefix+'SendCode', code:prefix+'Code', message:'registerMessage',
+    path:'/api/auth/register/code', fields:[prefix+'Username',prefix+'Email'],
+    identity:() => ({accountType:type, username:document.getElementById(prefix+'Username').value.trim(), email:document.getElementById(prefix+'Email').value.trim()}),
+    valid:() => document.getElementById(prefix+'Email').checkValidity()});
 });
+async function registration(type) {
+  var prefix = type === 'user' ? 'user' : 'comp';
+  var field = suffix => document.getElementById(prefix + suffix);
+  var button = document.querySelector('#' + type + 'Panel .login-btn');
+  if (button.disabled) return;
+  var message = document.getElementById('registerMessage');
+  var body = {username:field('Username').value.trim(), password:field('Password').value,
+    email:field('Email').value.trim(), code:field('Code').value.trim()};
+  if (!body.username || !body.password || !body.email || !field('Email').checkValidity() || !/^[0-9]{6}$/.test(body.code)) {
+    message.textContent = '请填写账号、密码、有效邮箱和 6 位验证码'; return;
+  }
+  if (type === 'company') {
+    Object.assign(body, {companyName:document.getElementById('companyName').value.trim(), industry:document.getElementById('industry').value,
+      city:document.getElementById('compCity').value, scale:document.getElementById('scale').value});
+    if (!body.companyName) { message.textContent = '请填写公司名称'; return; }
+  }
+  button.disabled = true; message.textContent = '正在注册…';
+  try {
+    var result = await api('/api/' + type + '/register', {method:'POST', body:JSON.stringify(body)});
+    message.textContent = result.msg;
+    if (result.code === 0) location.href = '/login.html?type=' + type;
+  } catch (error) { message.textContent = error.message || '服务暂时不可用，请稍后重试'; }
+  finally { button.disabled = false; }
+}
+function userRegister() { return registration('user'); }
+function companyRegister() { return registration('company'); }
+if (new URLSearchParams(location.search).get('type') === 'company') switchTab('company');
 </script>
 </body>
 </html>

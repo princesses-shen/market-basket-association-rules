@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>个人主页 · 智聘</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="navbar-container"></div>
+
+<div class="user-home">
+  <!-- 个人信息卡片 -->
+  <div class="profile-card">
+    <div class="profile-header">
+      <div class="profile-avatar" id="avatar">👤</div>
+      <div class="profile-info">
+        <h1 id="userName">用户</h1>
+        <p id="userMeta">完善信息后展示</p>
+      </div>
+    </div>
+    <div class="profile-stats" id="profileStats">
+      <div class="profile-stat"><span id="appCount">0</span><label>投递</label></div>
+    <div class="profile-stat"><span>0</span><label>收藏</label></div>
+    <div class="profile-stat"><span id="resumeStatus">未完善</span><label>简历</label></div>
+    </div>
+  </div>
+
+  <!-- 快捷操作 -->
+  <div class="quick-grid">
+    <div class="quick-item" onclick="location.href='/search.html'">
+      <div class="qi-icon">🔍</div>
+      <div class="qi-title">找工作</div>
+      <div class="qi-desc">搜索心仪岗位</div>
+    </div>
+    <div class="quick-item" onclick="location.href='/user/resume.html'">
+      <div class="qi-icon">📄</div>
+      <div class="qi-title">我的简历</div>
+      <div class="qi-desc">编辑个人信息</div>
+    </div>
+    <div class="quick-item" onclick="location.href='/user/chat.html'">
+      <div class="qi-icon">💬</div>
+      <div class="qi-title">我的消息</div>
+      <div class="qi-desc">与企业沟通</div>
+    </div>
+    <div class="quick-item" onclick="location.href='/predict.html'">
+      <div class="qi-icon">💰</div>
+      <div class="qi-title">薪资预测</div>
+      <div class="qi-desc">AI 预测薪资范围</div>
+    </div>
+    <div class="quick-item" onclick="location.href='/dashboard.html'">
+      <div class="qi-icon">📊</div>
+      <div class="qi-title">市场分析</div>
+      <div class="qi-desc">数据大屏</div>
+    </div>
+  </div>
+
+  <!-- 推荐岗位 -->
+  <div class="recommend-section">
+    <div class="section-header">
+      <h3>为你推荐</h3>
+      <a href="/search.html">查看更多 →</a>
+    </div>
+    <div id="recommendJobs"></div>
+  </div>
+</div>
+
+<style>
+.user-home { max-width: 1000px; margin: 0 auto; padding: 24px; }
+.profile-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff; border-radius: 16px; padding: 30px; margin-bottom: 24px;
+}
+.profile-header { display: flex; align-items: center; gap: 20px; }
+.profile-avatar {
+  width: 72px; height: 72px; border-radius: 50%; background: rgba(255,255,255,0.2);
+  display: flex; align-items: center; justify-content: center; font-size: 32px;
+}
+.profile-info h1 { margin: 0 0 6px; font-size: 24px; }
+.profile-info p { margin: 0; opacity: 0.85; font-size: 14px; }
+.profile-stats { display: flex; gap: 32px; margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.2); }
+.profile-stat { text-align: center; }
+.profile-stat span { display: block; font-size: 20px; font-weight: 700; }
+.profile-stat label { font-size: 12px; opacity: 0.8; }
+.quick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.quick-item {
+  background: #fff; border: 1px solid var(--border); border-radius: 12px;
+  padding: 20px; cursor: pointer; transition: all .2s; text-align: center;
+}
+.quick-item:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); transform: translateY(-2px); }
+.qi-icon { font-size: 28px; margin-bottom: 8px; }
+.qi-title { font-weight: 600; margin-bottom: 4px; }
+.qi-desc { font-size: 12px; color: var(--text-light); }
+.recommend-section { background: #fff; border-radius: 12px; padding: 24px; }
+.section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.section-header h3 { margin: 0; }
+.section-header a { color: var(--primary); text-decoration: none; font-size: 13px; }
+.rec-job-item {
+  display: flex; justify-content: space-between; padding: 14px 0;
+  border-bottom: 1px solid var(--bg); cursor: pointer;
+}
+.rec-job-item:last-child { border: none; }
+.rec-job-item:hover { background: var(--bg); margin: 0 -12px; padding: 14px 12px; border-radius: 8px; }
+.rec-job-title { font-weight: 600; }
+.rec-job-meta { color: var(--text-light); font-size: 12px; margin-top: 4px; }
+.rec-job-salary { color: #e74c3c; font-weight: 600; }
+</style>
+
+<script src="/js/common.js"></script>
+<script>
+injectNavbar('user-home');
+
+var username = localStorage.getItem('recruit_username') || '';
+document.getElementById('userName').textContent = username;
+
+async function loadProfile() {
+  try {
+    var r = await fetch('/api/resume/get?username=' + username).then(r => r.json());
+    if (r && r.name) {
+      document.getElementById('userName').textContent = r.name;
+      document.getElementById('userMeta').textContent = (r.city||'') + ' · ' + (r.edu||'') + ' · ' + (r.exp||'');
+      document.getElementById('resumeStatus').textContent = '已完善';
+    } else {
+      document.getElementById('resumeStatus').textContent = '未完善';
+      document.getElementById('userMeta').innerHTML = '<a href="/user/resume.html" style="color:#fff;text-decoration:underline;">完善简历 →</a>';
+    }
+  } catch(e) {}
+}
+
+async function loadAppCount() {
+  try {
+    var apps = await fetch('/api/chat/my-applications?username=' + username).then(r => r.json());
+    document.getElementById('appCount').textContent = apps.length || 0;
+  } catch(e) {}
+}
+
+async function loadRecommend() {
+  var jobs = await fetch('/api/job/featured').then(r => r.json());
+  var el = document.getElementById('recommendJobs');
+  el.innerHTML = jobs.map(j => {
+    return '<div class="rec-job-item" onclick="location.href=\'/detail.html?id=' + j.rowKey + '\'">'
+      + '<div><div class="rec-job-title">' + (j.title||'') + '</div>'
+      + '<div class="rec-job-meta">' + (j.company||'') + ' · ' + (j.city||'') + ' · ' + (j.edu||'') + '</div></div>'
+      + '<div class="rec-job-salary">' + (j.salary_low||0) + '-' + (j.salary_high||0) + 'K</div>'
+      + '</div>';
+  }).join('');
+}
+
+loadProfile();
+loadAppCount();
+loadRecommend();
+</script>
+</body>
+</html>

@@ -20,6 +20,16 @@ env/
 Thumbs.db
 desktop.ini
 
+# ---- WorkBuddy 本地工作状态（含机器相关路径，不入库）----
+.workbuddy/
+
+# Java build and account attachment runtime data
+day08-backend/target/
+day08-backend/uploads/
+uploads/
+config/account-security.env
+
+# ---- 采集与临时文件（origin/main 侧）----
 # Chrome profile (crawler temp)
 .chrome_profile/
 
@@ -28,6 +38,8 @@ desktop.ini
 
 # Screenshots / temp files
 *.png
+# 例外：大屏图表产物要入库（README「静态图表」一节的 4 张 PNG）
+!outputs/charts/*.png
 boss_cdp_crawl.py
 boss_local_crawl.py
 lagou_local_crawl.py

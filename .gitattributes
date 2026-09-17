@@ -1,0 +1,44 @@
+# ============================================================
+# 行尾规范 —— 重要！
+# 本项目有一个 Windows 一键启动器 start_website.bat。
+# cmd.exe 解析 LF 行尾的 bat 时会出错（多行 if 块失效、行为诡异），
+# 所以 .bat / .cmd 必须强制 CRLF，任何机器 clone 下来都保持 CRLF。
+# 同理 .sh 必须强制 LF，否则 Linux 上报 "bad interpreter: ^M"。
+# ============================================================
+
+# 默认：进仓库统一存 LF
+* text=auto eol=lf
+
+# Windows 批处理 —— 必须 CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# 私有配置模板 —— 强制 CRLF
+# 原因：start_website.bat 用 for /f 逐行解析它，cmd.exe 对 LF 行尾脆弱；
+# 用户复制 local.env.example 成 local.env 时会继承这里的行尾。
+config/local.env.example text eol=crlf
+
+# Shell / Makefile —— 必须 LF
+*.sh text eol=lf
+Makefile text eol=lf
+
+# 二进制文件，不做任何转换
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pkl binary
+*.jar binary
+*.zip binary
+*.tar binary
+*.gz binary
+*.xlsx binary
+
+# 第三方本地化 JS 库 —— 保持 CDN 原始字节
+# echarts.min.js 内部有若干 CRLF，若被 text=auto 归一化会改变文件内容
+*.min.js binary
+
+# 数据文件保持原始字节（UTF-8 BOM / CRLF 都不要动）
+*.csv -text
+*.tsv -text

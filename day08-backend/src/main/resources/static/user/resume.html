@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>我的简历 · 智聘</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="navbar-container"></div>
+
+<div class="page-container">
+  <h2 style="margin:24px 0;">我的简历</h2>
+
+  <div class="card resume-form">
+    <div class="form-section">
+      <h3>基本信息</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>姓名</label>
+          <input type="text" id="name" class="form-input" placeholder="你的姓名">
+        </div>
+        <div class="form-group">
+          <label>性别</label>
+          <select id="gender" class="form-input"><option>男</option><option>女</option></select>
+        </div>
+        <div class="form-group">
+          <label>年龄</label>
+          <input type="number" id="age" class="form-input" placeholder="年龄" min="18" max="65">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>城市</label>
+          <select id="city" class="form-input">
+            <option value="">选择城市</option>
+            <option>北京</option><option>上海</option><option>广州</option><option>深圳</option>
+            <option>杭州</option><option>成都</option><option>南京</option><option>武汉</option>
+            <option>西安</option><option>长沙</option><option>苏州</option><option>重庆</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>学历</label>
+          <select id="edu" class="form-input">
+            <option>不限</option><option>大专</option><option>本科</option><option>硕士</option><option>博士</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>工作经验</label>
+          <select id="exp" class="form-input">
+            <option>应届</option><option>1年</option><option>1-3年</option>
+            <option>3-5年</option><option>5-10年</option><option>10年以上</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>电话</label>
+          <input type="text" id="phone" class="form-input" placeholder="联系电话">
+        </div>
+        <div class="form-group">
+          <label>邮箱</label>
+          <input type="email" id="email" class="form-input" placeholder="邮箱">
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3>技能标签</h3>
+      <input type="text" id="skills" class="form-input" style="width:100%;" placeholder="用分号分隔, 如 Java;Spring;MySQL;Docker">
+    </div>
+
+    <div class="form-section">
+      <h3>自我介绍</h3>
+      <textarea id="selfIntro" class="form-input" style="width:100%;min-height:120px;" placeholder="介绍你的工作经验、项目经历、职业规划..."></textarea>
+    </div>
+
+    <button class="btn-save" onclick="saveResume()">保存简历</button>
+    <span id="saveMsg" style="margin-left:16px;color:#27ae60;"></span>
+  </div>
+</div>
+
+<style>
+.page-container { max-width: 800px; margin: 0 auto; padding: 0 24px; }
+.resume-form { padding: 30px; }
+.form-section { margin-bottom: 30px; }
+.form-section h3 { margin: 0 0 16px; font-size: 16px; border-left: 3px solid var(--primary); padding-left: 12px; }
+.form-row { display: flex; gap: 16px; margin-bottom: 12px; }
+.form-group { flex: 1; }
+.form-group label { display: block; font-size: 13px; color: var(--text-light); margin-bottom: 6px; }
+.form-input {
+  width: 100%; padding: 10px 14px; border: 1px solid var(--border);
+  border-radius: 8px; font-size: 14px; outline: none; box-sizing: border-box;
+}
+.form-input:focus { border-color: var(--primary); }
+.btn-save {
+  padding: 12px 40px; background: var(--primary); color: #fff;
+  border: none; border-radius: 8px; font-size: 15px; cursor: pointer;
+}
+.btn-save:hover { background: var(--primary-dark); }
+</style>
+
+<script src="/js/common.js"></script>
+<script>
+injectNavbar('user-resume');
+var username = localStorage.getItem('recruit_username') || '';
+
+async function loadResume() {
+  try {
+    var r = await fetch('/api/resume/get?username=' + username).then(r => r.json());
+    if (r && r.name) {
+      document.getElementById('name').value = r.name || '';
+      document.getElementById('gender').value = r.gender || '男';
+      document.getElementById('age').value = r.age || '';
+      document.getElementById('city').value = r.city || '';
+      document.getElementById('edu').value = r.edu || '';
+      document.getElementById('exp').value = r.exp || '';
+      document.getElementById('phone').value = r.phone || '';
+      document.getElementById('email').value = r.email || '';
+      document.getElementById('skills').value = r.skills || '';
+      document.getElementById('selfIntro').value = r.self_intro || '';
+    }
+  } catch(e) {}
+}
+
+async function saveResume() {
+  var body = {
+    username: username,
+    name: document.getElementById('name').value,
+    gender: document.getElementById('gender').value,
+    age: parseInt(document.getElementById('age').value) || 0,
+    city: document.getElementById('city').value,
+    edu: document.getElementById('edu').value,
+    exp: document.getElementById('exp').value,
+    phone: document.getElementById('phone').value,
+    email: document.getElementById('email').value,
+    skills: document.getElementById('skills').value,
+    selfIntro: document.getElementById('selfIntro').value
+  };
+  if (!body.name) { alert('请填写姓名'); return; }
+  var res = await fetch('/api/resume/save', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body)
+  }).then(r => r.json());
+  if (res.code === 0) {
+    document.getElementById('saveMsg').textContent = '✓ 已保存';
+    setTimeout(function() { document.getElementById('saveMsg').textContent = ''; }, 3000);
+  } else {
+    alert(res.msg || '保存失败');
+  }
+}
+
+loadResume();
+</script>
+</body>
+</html>
