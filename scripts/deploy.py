@@ -1,21 +1,11 @@
 # -*- coding: utf-8 -*-
-"""部署招聘网站到虚拟机：SFTP 上传 Java + 前端 + mvn 打包 + 启动。
-
-连接参数（地址 / 用户 / 密码）取自 config/local.env（不入库），
-模板见 config/local.env.example。
-"""
+"""部署招聘网站到虚拟机：SFTP 上传 Java + 前端 + mvn 打包 + 启动。"""
 import paramiko
 import os
-import sys
 import time
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import config
-
-HOST = config.VM_HOST
-USER = config.VM_SSH_USER
-PASS = config.VM_SSH_PASSWORD
-REMOTE_ROOT = os.environ.get("VM_REMOTE_ROOT", "/home/" + USER + "/day08")
+HOST = "192.168.92.128"; USER = "xiaoliyu"; PASS = "123456"
+REMOTE_ROOT = "/home/xiaoliyu/day08"
 LOCAL_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "day08")
 
 def ssh():
@@ -169,7 +159,7 @@ def main():
     run(c, f"tail -15 {REMOTE_ROOT}/app.log", timeout=15)
     
     c.close()
-    print(f"\n>>> 部署完成！浏览器访问 http://{HOST}:{config.VM_BACKEND_PORT}/")
+    print("\n>>> 部署完成！浏览器访问 http://192.168.92.128:8080/")
 
 if __name__ == "__main__":
     main()

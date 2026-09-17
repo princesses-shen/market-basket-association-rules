@@ -10,58 +10,27 @@
 <div id="navbar-container"></div>
 
 <div class="search-layout">
-  <!-- 筛选侧栏（下拉框形式）-->
+  <!-- 筛选侧栏 -->
   <div class="filter-sidebar">
     <div class="card">
       <h3>筛选条件</h3>
-
       <div class="filter-group">
         <h4>城市</h4>
-        <select id="citySel" class="filter-select" onchange="doSearch(1)">
-          <option value="">全部城市</option>
-        </select>
+        <div id="cityFilter"></div>
       </div>
-
-      <div class="filter-group">
-        <h4>学历要求</h4>
-        <select id="eduSel" class="filter-select" onchange="doSearch(1)">
-          <option value="全部">全部</option>
-          <option value="不限">不限</option>
-          <option value="大专">大专</option>
-          <option value="本科">本科</option>
-          <option value="硕士">硕士</option>
-        </select>
-      </div>
-
-      <div class="filter-group">
-        <h4>岗位类别</h4>
-        <select id="catSel" class="filter-select" onchange="doSearch(1)">
-          <option value="全部">全部</option>
-          <option value="后端开发">后端开发</option>
-          <option value="前端开发">前端开发</option>
-          <option value="移动开发">移动开发</option>
-          <option value="测试">测试</option>
-          <option value="运维">运维</option>
-          <option value="数据">数据</option>
-          <option value="算法">算法</option>
-          <option value="产品">产品</option>
-          <option value="设计">设计</option>
-          <option value="安全">安全</option>
-        </select>
-      </div>
-
       <div class="filter-group">
         <h4>薪资范围（K）</h4>
-        <div style="display:flex;gap:6px;align-items:center;">
-          <input type="number" id="salMin" placeholder="最低" style="width:80px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:14px;">
-          <span style="color:#999;">—</span>
-          <input type="number" id="salMax" placeholder="最高" style="width:80px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:14px;">
+        <div style="display:flex;gap:6px;">
+          <input type="number" id="salMin" placeholder="最低" style="width:80px;padding:6px;border:1px solid var(--border);border-radius:6px;">
+          <span>-</span>
+          <input type="number" id="salMax" placeholder="最高" style="width:80px;padding:6px;border:1px solid var(--border);border-radius:6px;">
         </div>
       </div>
-
-      <button class="btn-filter" onclick="doSearch(1)">筛选</button>
-
-      <button class="btn-reset" onclick="resetFilters()">重置筛选</button>
+      <div class="filter-group">
+        <h4>岗位类别</h4>
+        <div id="catFilter"></div>
+      </div>
+      <button onclick="doSearch(1)" style="width:100%;padding:10px;background:var(--primary);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;">筛选</button>
     </div>
   </div>
 
@@ -69,64 +38,23 @@
   <div class="job-list-area">
     <div class="result-bar">
       <span class="result-count" id="resultCount"></span>
-      <input type="text" id="kwInput" placeholder="搜索岗位/公司/技能..." style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;width:240px;" onkeypress="if(event.key==='Enter')doSearch(1)">
+      <input type="text" id="kwInput" placeholder="搜索关键词..." style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;width:240px;">
     </div>
     <div id="jobList"></div>
     <div id="pagination"></div>
   </div>
 </div>
 
-<style>
-.filter-select {
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  font-size: 14px;
-  background: #fff;
-  cursor: pointer;
-  transition: border-color .2s;
-  outline: none;
-}
-.filter-select:hover { border-color: var(--primary); }
-.filter-select:focus { border-color: var(--primary); }
-.btn-filter {
-  width: 100%;
-  padding: 10px;
-  background: var(--primary);
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  margin-top: 4px;
-  margin-bottom: 8px;
-  transition: background .2s;
-}
-.btn-filter:hover { background: var(--primary-dark); }
-.btn-reset {
-  width: 100%;
-  padding: 8px;
-  background: #fff;
-  color: var(--text-light);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 13px;
-}
-.btn-reset:hover { border-color: var(--primary); color: var(--primary); }
-</style>
-
 <script src="/js/common.js"></script>
 <script>
 injectNavbar('search');
 
 var CITIES = ["北京","上海","广州","深圳","杭州","成都","南京","武汉","西安","长沙","苏州","重庆","天津","青岛","厦门"];
+var CATEGORIES = ["全部","后端开发","前端开发","移动开发","测试","运维","数据","算法","产品","设计","安全"];
 var curPage = 1;
 var curCity = '';
 var curKeyword = '';
 var curCategory = '全部';
-var curEdu = '全部';
 
 // 从 URL 参数初始化
 function initFromURL() {
@@ -136,43 +64,35 @@ function initFromURL() {
   document.getElementById('kwInput').value = curKeyword;
 }
 
-// 填充城市下拉
-function initCitySelect() {
-  var sel = document.getElementById('citySel');
+// 渲染城市筛选
+function renderCityFilter() {
+  var el = document.getElementById('cityFilter');
+  var h = '<label><input type="radio" name="cityF" value="" ' + (!curCity?'checked':'') + ' onchange="curCity=this.value;doSearch(1)"> 全部</label>';
   CITIES.forEach(function(c) {
-    var o = document.createElement('option');
-    o.value = c; o.textContent = c;
-    if (c === curCity) o.selected = true;
-    sel.appendChild(o);
+    h += '<label><input type="radio" name="cityF" value="'+c+'" ' + (curCity===c?'checked':'') + ' onchange="curCity=this.value;doSearch(1)"> '+c+'</label>';
   });
-  sel.value = curCity;
+  el.innerHTML = h;
 }
 
-// 重置筛选
-function resetFilters() {
-  document.getElementById('citySel').value = '';
-  document.getElementById('eduSel').value = '全部';
-  document.getElementById('catSel').value = '全部';
-  document.getElementById('salMin').value = '';
-  document.getElementById('salMax').value = '';
-  document.getElementById('kwInput').value = '';
-  curCity = ''; curKeyword = ''; curCategory = '全部'; curEdu = '全部';
-  doSearch(1);
+// 渲染类别筛选
+function renderCatFilter() {
+  var el = document.getElementById('catFilter');
+  var h = '';
+  CATEGORIES.forEach(function(c) {
+    h += '<label><input type="radio" name="catF" value="'+c+'" ' + (curCategory===c?'checked':'') + ' onchange="curCategory=this.value;doSearch(1)"> '+c+'</label>';
+  });
+  el.innerHTML = h;
 }
 
 async function doSearch(page) {
   curPage = page || 1;
-  curCity = document.getElementById('citySel').value;
   curKeyword = document.getElementById('kwInput').value;
-  curCategory = document.getElementById('catSel').value;
-  curEdu = document.getElementById('eduSel').value;
   var salMin = document.getElementById('salMin').value || 0;
   var salMax = document.getElementById('salMax').value || 0;
   var url = '/api/job/search?page=' + curPage + '&size=10';
   if (curCity) url += '&city=' + encodeURIComponent(curCity);
   if (curKeyword) url += '&keyword=' + encodeURIComponent(curKeyword);
   if (curCategory && curCategory !== '全部') url += '&category=' + encodeURIComponent(curCategory);
-  if (curEdu && curEdu !== '全部') url += '&edu=' + encodeURIComponent(curEdu);
   if (salMin > 0) url += '&salaryMin=' + salMin;
   if (salMax > 0) url += '&salaryMax=' + salMax;
 
@@ -185,11 +105,13 @@ async function doSearch(page) {
   } else {
     el.innerHTML = list.map(jobCardHTML).join('');
   }
+  // 分页
   document.getElementById('pagination').innerHTML = paginationHTML(res.page, res.totalPages || 1);
 }
 
 initFromURL();
-initCitySelect();
+renderCityFilter();
+renderCatFilter();
 doSearch(1);
 </script>
 </body>

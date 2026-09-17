@@ -38,9 +38,26 @@
   </div>
 </div>
 
+<!-- 求职咨询 -->
+<div style="max-width:1200px;margin:24px auto;padding:0 20px;">
+  <div class="card">
+    <h3 style="display:flex;justify-content:space-between;align-items:center;">
+      <span>💡 求职咨询</span>
+      <a href="/forum.html" style="font-size:13px;font-weight:normal;">更多文章 →</a>
+    </h3>
+    <div id="forumList" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+      <div style="color:#999;text-align:center;padding:20px;">加载中...</div>
+    </div>
+  </div>
+</div>
+
 <!-- 底部 -->
 <div style="text-align:center;padding:40px;color:#999;font-size:14px;">
-  <a href="/dashboard.html" style="color:var(--primary);">查看数据大屏分析 →</a>
+  <p style="margin-bottom:8px;">
+    <a href="/dashboard.html" style="color:var(--primary);margin:0 12px;">📊 数据大屏</a>
+    <a href="/forum.html" style="color:var(--primary);margin:0 12px;">💡 求职咨询</a>
+    <a href="/search.html" style="color:var(--primary);margin:0 12px;">🔍 找工作</a>
+  </p>
   <p style="margin-top:12px;">智聘招聘分析平台 © 2026 | 基于 Hadoop-HBase + Spring Boot + ECharts</p>
 </div>
 
@@ -92,6 +109,35 @@ document.getElementById('kwInput').addEventListener('keypress', function(e) {
 
 loadCities();
 loadFeatured();
+loadForumArticles();
+
+// 加载求职咨询文章
+async function loadForumArticles() {
+  var data = await api('/api/forum/list?size=3');
+  var el = document.getElementById('forumList');
+  if (!data || !data.list || data.list.length === 0) {
+    el.innerHTML = '<p style="text-align:center;color:#999;">暂无文章</p>';
+    return;
+  }
+  el.innerHTML = data.list.map(function(a) {
+    return '<div onclick="location.href=\'/article.html?id=' + a.id + '\'"'
+      + ' style="background:linear-gradient(135deg,#f8faff,#eef3ff);border-radius:10px;padding:18px;'
+      + 'cursor:pointer;transition:all .2s;border:1px solid #e0e8f0;'
+      + '" onmouseover="this.style.transform=\'translateY(-3px)\';this.style.boxShadow=\'0 4px 12px rgba(0,0,0,0.1)\'"'
+      + ' onmouseout="this.style.transform=\'translateY(0)\';this.style.boxShadow=\'none\'">'
+      + '<div style="font-size:32px;margin-bottom:8px;">' + (a.cover || '📄') + '</div>'
+      + '<div style="font-size:15px;font-weight:600;color:var(--primary-dark);margin-bottom:6px;'
+      + 'display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.4;">'
+      + a.title + '</div>'
+      + '<div style="font-size:12px;color:var(--text-light);margin-bottom:8px;">'
+      + a.category + ' · ' + a.author + '</div>'
+      + '<div style="font-size:12px;color:#999;display:flex;gap:12px;">'
+      + '<span>👁 ' + a.views + '</span>'
+      + '<span>👍 ' + a.likes + '</span>'
+      + '<span>💬 ' + a.comments_count + '</span>'
+      + '</div></div>';
+  }).join('');
+}
 </script>
 </body>
 </html>

@@ -6,7 +6,7 @@ export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
 export HADOOP_CLASSPATH=$(/usr/local/hbase/bin/hbase classpath)
 export PATH=$JAVA_HOME/bin:$PATH
 
-cd "$HOME/day08"
+cd /home/xiaoliyu/day08
 pkill -f demo-0.0.1-SNAPSHOT.jar 2>/dev/null || true
 sleep 2
 

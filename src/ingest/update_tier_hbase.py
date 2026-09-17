@@ -1,15 +1,12 @@
 # -*- coding: utf-8 -*-
 """给 recruit_job 表的每行加 company_tier 列"""
-import os, sys
-import happybase
-
+import os, happybase, sys
 BASE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.join(BASE, "src", "ingest"))
-sys.path.insert(0, BASE)
-import config
 from company_tier import infer_tier
 
-conn = happybase.Connection(config.HBASE_HOST, config.HBASE_PORT, timeout=30000)
+conn = happybase.Connection(os.environ.get("HBASE_HOST", "192.168.92.128"),
+                            int(os.environ.get("HBASE_PORT", "9090")), timeout=30000)
 table = conn.table("recruit_job")
 rows = list(table.scan())
 print(f"扫描到 {len(rows)} 行")

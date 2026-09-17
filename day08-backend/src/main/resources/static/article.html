@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>文章详情 - 求职咨询</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+  .article-layout {
+    display: flex;
+    gap: 24px;
+    max-width: 1200px;
+    margin: 24px auto;
+    padding: 0 20px;
+  }
+  .article-main { flex: 1; }
+  .article-side { width: 280px; flex-shrink: 0; }
+
+  .article-card {
+    background: #fff;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 40px;
+    margin-bottom: 20px;
+  }
+  .article-card .title {
+    font-size: 26px;
+    font-weight: bold;
+    color: var(--primary-dark);
+    line-height: 1.4;
+    margin-bottom: 16px;
+  }
+  .article-card .meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px;
+    font-size: 13px;
+    color: var(--text-light);
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+  .article-card .meta .author {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--primary);
+    font-weight: 500;
+  }
+  .article-card .meta .cat-tag {
+    background: #fff3e0;
+    color: #e67e22;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+  }
+  .article-card .tags { margin-bottom: 20px; }
+  .article-card .tag {
+    display: inline-block;
+    background: #e8f0fe;
+    color: var(--primary);
+    padding: 3px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+    margin-right: 6px;
+  }
+  .article-content {
+    font-size: 15px;
+    line-height: 1.9;
+    color: var(--text);
+  }
+  .article-content h2 {
+    font-size: 20px;
+    color: var(--primary-dark);
+    margin: 28px 0 14px;
+    padding-left: 12px;
+    border-left: 4px solid var(--primary);
+  }
+  .article-content h3 {
+    font-size: 17px;
+    color: var(--primary-dark);
+    margin: 20px 0 10px;
+  }
+  .article-content p { margin-bottom: 12px; }
+  .article-content ul, .article-content ol { margin: 10px 0 16px 20px; }
+  .article-content li { margin-bottom: 6px; }
+  .article-content strong { color: var(--primary-dark); }
+  .article-content blockquote {
+    background: #f0f7ff;
+    border-left: 4px solid var(--primary);
+    padding: 12px 16px;
+    margin: 16px 0;
+    border-radius: 4px;
+  }
+  .article-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  .article-content th, .article-content td {
+    border: 1px solid var(--border);
+    padding: 10px 14px;
+    text-align: left;
+  }
+  .article-content th {
+    background: #f0f4f8;
+    font-weight: 600;
+  }
+
+  .action-bar {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    padding: 20px 0;
+    margin-top: 30px;
+    border-top: 1px solid var(--border);
+  }
+  .action-bar button {
+    padding: 10px 24px;
+    border: 1px solid var(--border);
+    background: #fff;
+    border-radius: 24px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all .2s;
+  }
+  .action-bar button:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+  .action-bar button.liked {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+  }
+
+  /* 评论区 */
+  .comment-section {
+    background: #fff;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 30px;
+  }
+  .comment-section h3 {
+    font-size: 18px;
+    color: var(--primary-dark);
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--border);
+  }
+  .comment-input {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .comment-input textarea {
+    flex: 1;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    resize: vertical;
+    min-height: 70px;
+    outline: none;
+    font-family: inherit;
+  }
+  .comment-input textarea:focus { border-color: var(--primary); }
+  .comment-input button {
+    align-self: flex-end;
+    padding: 10px 24px;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background .2s;
+  }
+  .comment-input button:hover { background: var(--primary-dark); }
+  .comment-input .login-tip {
+    align-self: center;
+    font-size: 13px;
+    color: var(--text-light);
+  }
+  .comment-input .login-tip a { color: var(--primary); }
+
+  .comment-list { list-style: none; }
+  .comment-item {
+    padding: 16px 0;
+    border-bottom: 1px dashed var(--border);
+    display: flex;
+    gap: 12px;
+  }
+  .comment-item:last-child { border-bottom: none; }
+  .comment-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #e8f0fe;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .comment-body { flex: 1; min-width: 0; }
+  .comment-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+  .comment-head .name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--primary);
+  }
+  .comment-head .time {
+    font-size: 12px;
+    color: #999;
+  }
+  .comment-content {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text);
+  }
+  .comment-footer {
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--text-light);
+  }
+  .comment-footer span { margin-right: 12px; cursor: pointer; }
+  .comment-footer span:hover { color: var(--primary); }
+
+  /* 侧栏 */
+  .side-card {
+    background: #fff;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .side-card h4 {
+    font-size: 15px;
+    color: var(--primary-dark);
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--border);
+  }
+  .author-info { text-align: center; }
+  .author-info .avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #e8f0fe;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    margin: 0 auto 10px;
+  }
+  .author-info .name {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--primary-dark);
+  }
+  .author-info .desc {
+    font-size: 12px;
+    color: var(--text-light);
+    margin-top: 4px;
+  }
+
+  .side-list { list-style: none; }
+  .side-list li {
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--border);
+    font-size: 13px;
+    cursor: pointer;
+    transition: color .2s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .side-list li:last-child { border-bottom: none; }
+  .side-list li:hover { color: var(--primary); }
+
+  @media (max-width: 768px) {
+    .article-layout { flex-direction: column; }
+    .article-side { width: 100%; }
+    .article-card { padding: 24px; }
+    .article-card .title { font-size: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="navbar-container"></div>
+
+<div class="article-layout">
+  <div class="article-main">
+    <div class="article-card" id="articleBox">
+      <div style="text-align:center;padding:40px 0;color:#999;">加载中...</div>
+    </div>
+
+    <div class="comment-section">
+      <h3>💬 评论区 <span id="commentCount" style="font-size:13px;color:#999;font-weight:normal;"></span></h3>
+      <div class="comment-input" id="commentInputBox"></div>
+      <ul class="comment-list" id="commentList"></ul>
+    </div>
+  </div>
+
+  <div class="article-side">
+    <div class="side-card">
+      <h4>✍️ 作者</h4>
+      <div class="author-info" id="authorInfo">
+        <div class="avatar">👤</div>
+        <div class="name">加载中</div>
+      </div>
+    </div>
+    <div class="side-card">
+      <h4>📚 相关推荐</h4>
+      <ul class="side-list" id="relatedList"></ul>
+    </div>
+    <div class="side-card">
+      <h4>🏷️ 文章标签</h4>
+      <div id="articleTags" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+    </div>
+  </div>
+</div>
+
+<script src="js/common.js"></script>
+<script>
+  const articleId = new URLSearchParams(location.search).get('id') || 'art_001';
+  let liked = false;
+
+  function loadArticle() {
+    fetch('/api/forum/detail/' + articleId)
+      .then(r => r.json())
+      .then(a => {
+        if (a.error) {
+          document.getElementById('articleBox').innerHTML =
+            '<div style="text-align:center;padding:60px 0;color:#999;">文章不存在</div>';
+          return;
+        }
+        document.title = a.title + ' - 求职咨询';
+
+        document.getElementById('articleBox').innerHTML = `
+          <div class="title">${a.title}</div>
+          <div class="meta">
+            <span class="cat-tag">${a.category}</span>
+            <span class="author">${a.author_avatar || '👤'} ${a.author}</span>
+            <span>📅 ${a.publish_time}</span>
+            <span>👁 ${a.views} 阅读</span>
+            <span>👍 ${a.likes} 点赞</span>
+            <span>💬 ${a.comments_count} 评论</span>
+          </div>
+          <div class="tags">${(a.tags||[]).map(t => `<span class="tag">#${t}</span>`).join('')}</div>
+          <div class="article-content">${a.content}</div>
+          <div class="action-bar">
+            <button id="likeBtn" onclick="toggleLike()">
+              👍 <span id="likeCount">${a.likes}</span> 点赞
+            </button>
+            <button onclick="document.getElementById('commentInputBox').scrollIntoView({behavior:'smooth'});document.querySelector('.comment-input textarea').focus();">
+              💬 发表评论
+            </button>
+            <button onclick="shareArticle()">🔗 分享</button>
+          </div>
+        `;
+
+        // 作者信息
+        document.getElementById('authorInfo').innerHTML = `
+          <div class="avatar">${a.author_avatar || '👤'}</div>
+          <div class="name">${a.author}</div>
+          <div class="desc">${a.category}专栏作者</div>
+        `;
+
+        // 文章标签
+        document.getElementById('articleTags').innerHTML = (a.tags||[]).map(t =>
+          `<span class="tag" style="font-size:12px;">#${t}</span>`
+        ).join('');
+
+        loadComments();
+        loadRelated();
+      });
+  }
+
+  function loadComments() {
+    fetch('/api/forum/comments/' + articleId)
+      .then(r => r.json())
+      .then(comments => {
+        document.getElementById('commentCount').textContent = `(${comments.length}条)`;
+        const list = document.getElementById('commentList');
+        if (comments.length === 0) {
+          list.innerHTML = '<div style="text-align:center;padding:30px 0;color:#999;font-size:13px;">暂无评论，快来抢沙发吧~</div>';
+          return;
+        }
+        list.innerHTML = comments.map(c => `
+          <li class="comment-item">
+            <div class="comment-avatar">${c.avatar || '😊'}</div>
+            <div class="comment-body">
+              <div class="comment-head">
+                <span class="name">${c.author}</span>
+                <span class="time">${c.time}</span>
+              </div>
+              <div class="comment-content">${c.content}</div>
+              <div class="comment-footer">
+                <span>👍 ${c.likes}</span>
+                <span>💬 回复</span>
+              </div>
+            </div>
+          </li>
+        `).join('');
+      });
+  }
+
+  function loadRelated() {
+    fetch('/api/forum/list?size=5')
+      .then(r => r.json())
+      .then(data => {
+        const list = data.list.filter(a => a.id !== articleId).slice(0, 5);
+        document.getElementById('relatedList').innerHTML = list.map(a => `
+          <li onclick="location.href='article.html?id=${a.id}'">${a.title}</li>
+        `).join('');
+      });
+  }
+
+  function toggleLike() {
+    if (liked) return;
+    fetch('/api/forum/like/' + articleId, { method: 'POST' })
+      .then(r => r.json())
+      .then(res => {
+        if (res.success) {
+          liked = true;
+          const btn = document.getElementById('likeBtn');
+          btn.classList.add('liked');
+          const cnt = document.getElementById('likeCount');
+          cnt.textContent = parseInt(cnt.textContent) + 1;
+        }
+      });
+  }
+
+  function shareArticle() {
+    navigator.clipboard.writeText(location.href).then(() => {
+      alert('链接已复制到剪贴板，快去分享给朋友吧！');
+    }).catch(() => {
+      alert('分享链接：' + location.href);
+    });
+  }
+
+  function renderCommentInput() {
+    const user = getCurrentUser();
+    const box = document.getElementById('commentInputBox');
+    if (user) {
+      box.innerHTML = `
+        <div style="width:40px;height:40px;border-radius:50%;background:#e8f0fe;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">😊</div>
+        <textarea id="commentText" placeholder="写下你的想法..."></textarea>
+        <button onclick="submitComment()">发表评论</button>
+      `;
+    } else {
+      box.innerHTML = `
+        <div class="login-tip">
+          <a href="login.html?redirect=article.html?id=${articleId}">登录</a> 后可以发表评论哦~
+        </div>
+      `;
+    }
+  }
+
+  function submitComment() {
+    const text = document.getElementById('commentText').value.trim();
+    if (!text) { alert('请输入评论内容'); return; }
+    const user = getCurrentUser();
+    if (!user) { alert('请先登录'); return; }
+
+    fetch('/api/forum/comment/' + articleId, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + user.token
+      },
+      body: JSON.stringify({ content: text })
+    })
+      .then(r => r.json())
+      .then(res => {
+        if (res.success) {
+          document.getElementById('commentText').value = '';
+          loadComments();
+        } else {
+          alert(res.msg || '评论失败');
+        }
+      });
+  }
+
+  // 初始化
+  loadNav('forum');
+  renderCommentInput();
+  loadArticle();
+</script>
+</body>
+</html>

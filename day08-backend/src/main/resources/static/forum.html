@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>求职咨询 - 职场经验分享平台</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+  /* ===== 论坛专用样式 ===== */
+  .forum-header {
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    padding: 50px 20px 60px;
+    text-align: center;
+    color: #fff;
+  }
+  .forum-header h1 { font-size: 30px; margin-bottom: 10px; }
+  .forum-header p { font-size: 15px; opacity: 0.85; margin-bottom: 24px; }
+  .forum-search {
+    max-width: 600px;
+    margin: 0 auto;
+    display: flex;
+    gap: 0;
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  }
+  .forum-search input {
+    flex: 1;
+    border: none;
+    padding: 14px 16px;
+    font-size: 15px;
+    outline: none;
+  }
+  .forum-search button {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    padding: 0 30px;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background .2s;
+  }
+  .forum-search button:hover { background: var(--primary-dark); }
+
+  .forum-layout {
+    display: flex;
+    gap: 24px;
+    max-width: 1200px;
+    margin: -30px auto 40px;
+    padding: 0 20px;
+    position: relative;
+    z-index: 2;
+  }
+  .forum-main { flex: 1; }
+  .forum-side { width: 280px; flex-shrink: 0; }
+
+  /* 分类标签 */
+  .category-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding: 16px 20px;
+    background: #fff;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+  }
+  .category-bar span {
+    font-size: 14px;
+    color: var(--text-light);
+    margin-right: 8px;
+    align-self: center;
+  }
+  .category-bar a {
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    background: #f0f4f8;
+    color: var(--text-light);
+    transition: all .2s;
+  }
+  .category-bar a:hover { background: #e0e8f0; }
+  .category-bar a.active {
+    background: var(--primary);
+    color: #fff;
+  }
+
+  /* 文章卡片 */
+  .article-card {
+    background: #fff;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px 24px;
+    margin-bottom: 16px;
+    display: flex;
+    gap: 20px;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .article-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  }
+  .article-card .cover {
+    width: 140px;
+    height: 100px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #e8f0fe, #d0e0ff);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    flex-shrink: 0;
+  }
+  .article-card .info { flex: 1; min-width: 0; }
+  .article-card .title {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--primary-dark);
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .article-card:hover .title { color: var(--primary); }
+  .article-card .summary {
+    font-size: 13px;
+    color: var(--text-light);
+    line-height: 1.6;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+  .article-card .meta {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 12px;
+    color: #999;
+  }
+  .article-card .meta .cat-tag {
+    background: #fff3e0;
+    color: #e67e22;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+  }
+  .article-card .meta .author { color: var(--primary); }
+  .article-card .meta .stat { display: flex; align-items: center; gap: 3px; }
+
+  /* 侧栏卡片 */
+  .side-card {
+    background: #fff;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .side-card h4 {
+    font-size: 15px;
+    color: var(--primary-dark);
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--border);
+  }
+  .hot-article-list { list-style: none; }
+  .hot-article-list li {
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--border);
+    font-size: 13px;
+    cursor: pointer;
+    transition: color .2s;
+  }
+  .hot-article-list li:last-child { border-bottom: none; }
+  .hot-article-list li:hover { color: var(--primary); }
+  .hot-article-list li .rank {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+    text-align: center;
+    background: #e8f0fe;
+    color: var(--primary);
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: bold;
+    margin-right: 8px;
+  }
+  .hot-article-list li:nth-child(1) .rank { background: #ff4757; color: #fff; }
+  .hot-article-list li:nth-child(2) .rank { background: #ff6b81; color: #fff; }
+  .hot-article-list li:nth-child(3) .rank { background: #ffa502; color: #fff; }
+
+  .tag-cloud { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tag-cloud a {
+    padding: 4px 12px;
+    background: #f0f4f8;
+    color: var(--text-light);
+    border-radius: 16px;
+    font-size: 12px;
+    transition: all .2s;
+  }
+  .tag-cloud a:hover { background: var(--primary); color: #fff; }
+
+  @media (max-width: 768px) {
+    .forum-layout { flex-direction: column; }
+    .forum-side { width: 100%; }
+    .article-card .cover { width: 80px; height: 70px; font-size: 32px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="navbar-container"></div>
+
+<div class="forum-header">
+  <h1>💡 求职咨询</h1>
+  <p>职场经验分享 · 求职攻略交流 · 过来人告诉你真实的职场</p>
+  <div class="forum-search">
+    <input type="text" id="searchInput" placeholder="搜索文章，比如：秋招、谈薪、转行...">
+    <button onclick="searchArticles()">搜索</button>
+  </div>
+</div>
+
+<div class="forum-layout">
+  <div class="forum-main">
+    <div class="category-bar" id="categoryBar">
+      <span>分类：</span>
+    </div>
+    <div id="articleList"></div>
+    <div class="pagination" id="pagination"></div>
+  </div>
+
+  <div class="forum-side">
+    <div class="side-card">
+      <h4>🔥 热门文章</h4>
+      <ul class="hot-article-list" id="hotList"></ul>
+    </div>
+    <div class="side-card">
+      <h4>🏷️ 热门标签</h4>
+      <div class="tag-cloud" id="tagCloud"></div>
+    </div>
+    <div class="side-card">
+      <h4>💡 小贴士</h4>
+      <p style="font-size:13px;color:var(--text-light);line-height:1.7;">
+        登录后可以发表评论、点赞文章。<br>
+        优质评论会被置顶推荐哦~
+      </p>
+    </div>
+  </div>
+</div>
+
+<script src="js/common.js"></script>
+<script>
+  let currentPage = 1;
+  let currentCategory = '全部';
+  let currentKeyword = '';
+
+  function loadCategories() {
+    fetch('/api/forum/categories')
+      .then(r => r.json())
+      .then(cats => {
+        const bar = document.getElementById('categoryBar');
+        cats.forEach(cat => {
+          const a = document.createElement('a');
+          a.href = 'javascript:;';
+          a.textContent = cat;
+          a.className = cat === currentCategory ? 'active' : '';
+          a.onclick = () => {
+            currentCategory = cat;
+            currentPage = 1;
+            loadCategories();
+            loadArticles();
+          };
+          bar.appendChild(a);
+        });
+      });
+  }
+
+  function loadArticles() {
+    const params = new URLSearchParams({
+      category: currentCategory,
+      keyword: currentKeyword,
+      page: currentPage,
+      size: 8
+    });
+    fetch('/api/forum/list?' + params)
+      .then(r => r.json())
+      .then(data => {
+        renderArticles(data.list);
+        renderPagination(data.totalPages);
+      });
+  }
+
+  function renderArticles(list) {
+    const box = document.getElementById('articleList');
+    if (!list || list.length === 0) {
+      box.innerHTML = '<div style="text-align:center;padding:60px 0;color:#999;">暂无相关文章</div>';
+      return;
+    }
+    box.innerHTML = list.map(a => `
+      <div class="article-card" onclick="location.href='article.html?id=${a.id}'">
+        <div class="cover">${a.cover || '📄'}</div>
+        <div class="info">
+          <div class="title">${a.title}</div>
+          <div class="summary">${a.summary}</div>
+          <div class="meta">
+            <span class="cat-tag">${a.category}</span>
+            <span class="author">${a.author_avatar || '👤'} ${a.author}</span>
+            <span class="stat">👁 ${a.views}</span>
+            <span class="stat">👍 ${a.likes}</span>
+            <span class="stat">💬 ${a.comments_count}</span>
+            <span>${a.publish_time}</span>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function renderPagination(totalPages) {
+    const box = document.getElementById('pagination');
+    if (totalPages <= 1) { box.innerHTML = ''; return; }
+    let html = `<button ${currentPage===1?'disabled':''} onclick="goPage(${currentPage-1})">上一页</button>`;
+    for (let i = 1; i <= totalPages; i++) {
+      html += `<button class="${i===currentPage?'active':''}" onclick="goPage(${i})">${i}</button>`;
+    }
+    html += `<button ${currentPage===totalPages?'disabled':''} onclick="goPage(${currentPage+1})">下一页</button>`;
+    box.innerHTML = html;
+  }
+
+  function goPage(p) {
+    currentPage = p;
+    loadArticles();
+    window.scrollTo({ top: 200, behavior: 'smooth' });
+  }
+
+  function searchArticles() {
+    currentKeyword = document.getElementById('searchInput').value.trim();
+    currentPage = 1;
+    loadArticles();
+  }
+
+  document.getElementById('searchInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') searchArticles();
+  });
+
+  function loadHotArticles() {
+    fetch('/api/forum/list?size=5')
+      .then(r => r.json())
+      .then(data => {
+        const list = data.list.sort((a, b) => b.views - a.views).slice(0, 5);
+        document.getElementById('hotList').innerHTML = list.map((a, i) => `
+          <li onclick="location.href='article.html?id=${a.id}'">
+            <span class="rank">${i+1}</span>${a.title.length > 20 ? a.title.slice(0,20)+'...' : a.title}
+          </li>
+        `).join('');
+      });
+  }
+
+  function loadTagCloud() {
+    fetch('/api/stats/keyword')
+      .then(r => r.json())
+      .then(data => {
+        const tags = Object.keys(data).slice(0, 15);
+        document.getElementById('tagCloud').innerHTML = tags.map(t =>
+          `<a href="javascript:;" onclick="document.getElementById('searchInput').value='${t}';searchArticles();">${t}</a>`
+        ).join('');
+      });
+  }
+
+  // 初始化
+  loadNav('forum');
+  loadCategories();
+  loadArticles();
+  loadHotArticles();
+  loadTagCloud();
+</script>
+</body>
+</html>

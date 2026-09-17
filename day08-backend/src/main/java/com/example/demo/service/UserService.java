@@ -27,7 +27,7 @@ public class UserService {
         Map<String, Object> result = new HashMap<>();
         try {
             if (hbase.exists("recruit_user", username)) {
-                result.put("code", 1);
+                result.put("success", false);
                 result.put("msg", "用户名已存在");
                 return result;
             }
@@ -42,12 +42,12 @@ public class UserService {
             data.put("created", new Date().toString().substring(0,19));
             hbase.putRow("recruit_user", username, "info", data);
             // 自动登录返回 token
-            result.put("code", 0);
+            result.put("success", true);
             result.put("token", jwtUtil.generateToken(username));
             result.put("username", username);
             result.put("msg", "注册成功");
         } catch (Exception e) {
-            result.put("code", 1);
+            result.put("success", false);
             result.put("msg", "服务器错误: " + e.getMessage());
         }
         return result;
@@ -59,18 +59,17 @@ public class UserService {
         try {
             Map<String,String> user = hbase.getRow("recruit_user", username, "info");
             if (user == null) {
-                result.put("code", 1);
+                result.put("success", false);
                 result.put("msg", "用户不存在");
                 return result;
             }
             String storedHash = user.get("password");
             // 先试 BCrypt（网页注册的）
             if (encoder.matches(password, storedHash)) {
-                result.put("code", 0);
+                result.put("success", true);
                 result.put("token", jwtUtil.generateToken(username));
                 result.put("username", username);
                 result.put("nickname", user.getOrDefault("nickname", username));
-                result.put("role", "user");
                 result.put("msg", "登录成功");
                 return result;
             }
@@ -88,18 +87,17 @@ public class UserService {
                 String newHash = encoder.encode(password);
                 hbase.putRow("recruit_user", username, "info",
                         Map.of("password", newHash));
-                result.put("code", 0);
+                result.put("success", true);
                 result.put("token", jwtUtil.generateToken(username));
                 result.put("username", username);
                 result.put("nickname", user.getOrDefault("nickname", username));
-                result.put("role", "user");
                 result.put("msg", "登录成功");
                 return result;
             }
-            result.put("code", 1);
+            result.put("success", false);
             result.put("msg", "密码错误");
         } catch (Exception e) {
-            result.put("code", 1);
+            result.put("success", false);
             result.put("msg", "服务器错误: " + e.getMessage());
         }
         return result;

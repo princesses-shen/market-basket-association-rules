@@ -9,15 +9,15 @@ import os, sys, pickle, numpy as np
 BASE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.join(BASE, "src", "analysis"))
 sys.path.insert(0, os.path.join(BASE, "src"))
-sys.path.insert(0, BASE)
 
 from features import featurize_batch, CITIES, FEATURE_DIM
-import config
 import happybase
 
 # === 1. 从 HBase 读数据 ===
 def load_from_hbase():
-    conn = happybase.Connection(config.HBASE_HOST, config.HBASE_PORT, timeout=30000)
+    host = os.environ.get("HBASE_HOST", "192.168.92.128")
+    port = int(os.environ.get("HBASE_PORT", "9090"))
+    conn = happybase.Connection(host, port, timeout=30000)
     table = conn.table("recruit_job")
     rows = list(table.scan())
     conn.close()

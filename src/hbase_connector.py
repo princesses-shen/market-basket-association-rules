@@ -6,9 +6,8 @@ HBase 大数据链路（真实接入）
 1. 从 recruit_keyword 频次表读取 Top 关键词，用于大屏词云展示（非事务源）
 2. 把挖掘出的强规则写回新表 recruit_assoc_rules，供前端 ECharts 大屏 fetch 接口展示
 
-真实环境：一台装好 HBase 2.5.9 的虚拟机，Thrift 服务端口默认 9090；
-          地址与端口在 config/local.env 里配置（模板见 config/local.env.example）。
-依赖 happybase。
+真实环境：虚拟机 192.168.92.128，HBase 2.5.9，Thrift 服务端口 9090。
+依赖 happybase（已在 dashujufinalwork 环境安装）。
 未连接时自动降级为本地 CSV，不影响主流程。
 
 注：recruit_keyword 表是「关键词→出现次数」的频次表，不是事务表，

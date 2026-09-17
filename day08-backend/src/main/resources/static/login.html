@@ -7,169 +7,59 @@
 <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-<div id="navbar-container"></div>
-
-<div class="login-page">
-  <div class="login-card">
-    <div class="login-tabs">
-      <button class="login-tab active" onclick="switchTab('user')">用户登录</button>
-      <button class="login-tab" onclick="switchTab('company')">企业登录</button>
+<div class="auth-page">
+  <div class="auth-card">
+    <h2>登录</h2>
+    <div class="alert alert-error" id="alertBox"></div>
+    <div class="form-group">
+      <label>用户名</label>
+      <input type="text" id="username" placeholder="输入用户名">
     </div>
-
-    <!-- 用户登录 -->
-    <div id="userPanel" class="login-panel active">
-      <h2>欢迎回来</h2>
-      <p class="login-hint">登录后查看岗位、管理简历</p>
-      <input type="text" id="userUsername" placeholder="用户名" class="login-input">
-      <input type="password" id="userPassword" placeholder="密码" class="login-input">
-      <button class="login-btn" onclick="userLogin()">登录</button>
-      <p class="login-tip">没有账号? <a href="/register.html">立即注册</a></p>
-      <p class="login-test">测试: admin / 123456</p>
+    <div class="form-group">
+      <label>密码</label>
+      <input type="password" id="password" placeholder="输入密码">
     </div>
-
-    <!-- 企业登录 -->
-    <div id="companyPanel" class="login-panel">
-      <h2>企业登录</h2>
-      <p class="login-hint">登录后管理岗位、浏览人才</p>
-      <input type="text" id="compUsername" placeholder="企业账号" class="login-input">
-      <input type="password" id="compPassword" placeholder="密码" class="login-input">
-      <button class="login-btn" onclick="companyLogin()">登录</button>
-      <p class="login-tip">没有企业账号? <a href="/register.html?type=company">立即注册</a></p>
-      <p class="login-test">测试: demo_co / 123456</p>
+    <button class="btn-submit" onclick="doLogin()">登录</button>
+    <div class="auth-footer">
+      还没有账号？<a href="/register.html">立即注册</a>
+    </div>
+    <div style="margin-top:16px;padding:12px;background:#f8f9fa;border-radius:8px;font-size:13px;color:#666;">
+      测试账号：admin/123456 · xiaoliyu/123456 · zhangsan/123456
     </div>
   </div>
 </div>
 
-<style>
-.login-page {
-  min-height: calc(100vh - 60px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-.login-card {
-  background: #fff;
-  border-radius: 16px;
-  padding: 40px;
-  width: 420px;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-}
-.login-tabs {
-  display: flex;
-  margin-bottom: 30px;
-  border-bottom: 2px solid var(--bg);
-}
-.login-tab {
-  flex: 1;
-  padding: 12px;
-  border: none;
-  background: none;
-  font-size: 16px;
-  cursor: pointer;
-  color: var(--text-light);
-  border-bottom: 3px solid transparent;
-  transition: all .2s;
-}
-.login-tab.active {
-  color: var(--primary);
-  border-bottom-color: var(--primary);
-  font-weight: 600;
-}
-.login-panel { display: none; }
-.login-panel.active { display: block; }
-.login-panel h2 { margin: 0 0 8px; font-size: 24px; }
-.login-hint { color: var(--text-light); margin: 0 0 24px; font-size: 13px; }
-.login-input {
-  width: 100%;
-  padding: 12px 16px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  font-size: 14px;
-  margin-bottom: 12px;
-  outline: none;
-  box-sizing: border-box;
-  transition: border-color .2s;
-}
-.login-input:focus { border-color: var(--primary); }
-.login-btn {
-  width: 100%;
-  padding: 12px;
-  background: var(--primary);
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  cursor: pointer;
-  margin-top: 8px;
-  transition: background .2s;
-}
-.login-btn:hover { background: var(--primary-dark); }
-.login-tip { text-align: center; margin: 16px 0 0; font-size: 13px; }
-.login-test { text-align: center; color: var(--text-light); font-size: 12px; margin: 8px 0 0; }
-</style>
-
 <script src="/js/common.js"></script>
 <script>
-injectNavbar('login');
+function showAlert(msg) {
+  var b = document.getElementById('alertBox');
+  b.textContent = msg;
+  b.className = 'alert alert-error show';
+}
 
-function switchTab(type) {
-  document.querySelectorAll('.login-tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.login-panel').forEach(p => p.classList.remove('active'));
-  if (type === 'user') {
-    document.querySelectorAll('.login-tab')[0].classList.add('active');
-    document.getElementById('userPanel').classList.add('active');
-  } else {
-    document.querySelectorAll('.login-tab')[1].classList.add('active');
-    document.getElementById('companyPanel').classList.add('active');
+async function doLogin() {
+  var username = document.getElementById('username').value.trim();
+  var password = document.getElementById('password').value;
+  if (!username || !password) { showAlert('请填写用户名和密码'); return; }
+  try {
+    var res = await api('/api/user/login', {
+      method: 'POST',
+      body: JSON.stringify({ username: username, password: password })
+    });
+    if (res.success) {
+      localStorage.setItem('recruit_token', res.token);
+      localStorage.setItem('recruit_username', res.username);
+      location.href = '/index.html';
+    } else {
+      showAlert(res.msg || '登录失败');
+    }
+  } catch(e) {
+    showAlert('网络错误，请重试');
   }
 }
 
-async function userLogin() {
-  var username = document.getElementById('userUsername').value;
-  var password = document.getElementById('userPassword').value;
-  if (!username || !password) { alert('请输入用户名和密码'); return; }
-  var res = await fetch('/api/user/login', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({username: username, password: password})
-  }).then(r => r.json());
-  if (res.code === 0) {
-    localStorage.setItem('recruit_username', username);
-    localStorage.setItem('recruit_role', 'user');
-    if (res.token) localStorage.setItem('recruit_token', res.token);
-    location.href = '/user/index.html';
-  } else {
-    alert(res.msg);
-  }
-}
-
-async function companyLogin() {
-  var username = document.getElementById('compUsername').value;
-  var password = document.getElementById('compPassword').value;
-  if (!username || !password) { alert('请输入企业账号和密码'); return; }
-  var res = await fetch('/api/company/login', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({username: username, password: password})
-  }).then(r => r.json());
-  if (res.code === 0) {
-    localStorage.setItem('recruit_username', username);
-    localStorage.setItem('recruit_role', 'company');
-    localStorage.setItem('recruit_company', res.company_name || username);
-    if (res.token) localStorage.setItem('recruit_token', res.token);
-    location.href = '/company/index.html';
-  } else {
-    alert(res.msg);
-  }
-}
-
-// Enter 提交
-document.getElementById('userPassword').addEventListener('keypress', function(e) {
-  if (e.key === 'Enter') userLogin();
-});
-document.getElementById('compPassword').addEventListener('keypress', function(e) {
-  if (e.key === 'Enter') companyLogin();
+document.getElementById('password').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') doLogin();
 });
 </script>
 </body>

@@ -37,15 +37,10 @@ public class SecurityConfig {
             .authorizeRequests()
                 // 静态资源放行
                 .antMatchers("/", "/**/*.html", "/**/*.js", "/**/*.css",
-                             "/**/*.png", "/**/*.jpg", "/**/*.ico", "/js/**", "/css/**",
-                             "/uploads/**").permitAll()
+                             "/**/*.png", "/**/*.jpg", "/**/*.ico", "/js/**", "/css/**").permitAll()
                 // 公开接口放行
-                .antMatchers("/api/user/register", "/api/user/login",
-                             "/api/company/register", "/api/company/login").permitAll()
-                .antMatchers("/api/company/**", "/api/resume/**", "/api/chat/**",
-                             "/api/upload").permitAll()
-                .antMatchers("/api/stats/**", "/api/rules/**", "/api/job/**",
-                             "/api/hello", "/api/predict", "/api/meta", "/api/overview").permitAll()
+                .antMatchers("/api/user/register", "/api/user/login").permitAll()
+                .antMatchers("/api/stats/**", "/api/rules/**", "/api/job/**", "/api/hello").permitAll()
                 // 其余需要登录
                 .anyRequest().authenticated()
             .and()

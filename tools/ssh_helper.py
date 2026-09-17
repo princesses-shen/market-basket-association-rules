@@ -1,19 +1,12 @@
 # -*- coding: utf-8 -*-
-"""SSH 工具: 远程执行命令 + 文件传输
-
-连接参数默认取自 config/local.env（不入库），模板见 config/local.env.example。
-也可以直接在构造函数里显式传入。
-"""
-import paramiko, os, sys
-
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import config
+"""SSH 工具: 远程执行命令 + 文件传输"""
+import paramiko, os
 
 class SSHHelper:
-    def __init__(self, host=None, user=None, password=None):
-        self.host = host or config.VM_HOST
-        self.user = user or config.VM_SSH_USER
-        self.password = password or config.VM_SSH_PASSWORD
+    def __init__(self, host="192.168.92.128", user="xiaoliyu", password="123456"):
+        self.host = host
+        self.user = user
+        self.password = password
         self.ssh = None
 
     def connect(self):

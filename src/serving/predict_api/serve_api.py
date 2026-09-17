@@ -9,11 +9,7 @@ import os, sys, pickle, json, numpy as np
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import urlparse, parse_qs
 
-# 自适应路径：VM 布局(serve_api.py 和 artifacts 同级) 或 本地布局(往上 4 层到项目根)
-HERE = os.path.dirname(os.path.abspath(__file__))
-BASE = HERE  # VM 布局: /home/$USER/predict
-if not os.path.exists(os.path.join(BASE, "artifacts", "models", "salary_predictor.pkl")):
-    BASE = os.path.normpath(os.path.join(HERE, "..", "..", "..", ".."))  # 本地布局: 项目根
+BASE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 MODEL_PATH = os.path.join(BASE, "artifacts", "models", "salary_predictor.pkl")
 sys.path.insert(0, os.path.join(BASE, "src", "analysis"))
 from features import featurize, CITIES, EDU_MAP, EXP_MAP, TIER_MAP, FEATURE_DIM

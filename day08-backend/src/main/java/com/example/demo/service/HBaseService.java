@@ -4,7 +4,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.*;
-import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -120,17 +119,9 @@ public class HBaseService {
         }
     }
 
-    // 删除一行（给人才库删除用）
-    public void deleteRow(String table, String rowKey) throws Exception {
-        try (Table t = connection.getTable(TableName.valueOf(table))) {
-            Delete d = new Delete(Bytes.toBytes(rowKey));
-            t.delete(d);
-        }
-    }
-
     // 岗位搜索：全表 scan 后 Java 端过滤（1200 行足够快）
     public List<Map<String,String>> scanJobs(String city, int salMin, int salMax,
-                                             String keyword, String category, String edu, int limit) throws Exception {
+                                             String keyword, String category, int limit) throws Exception {
         List<Map<String,String>> all = scanAll("recruit_job", "info");
         List<Map<String,String>> filtered = new ArrayList<>();
         for (Map<String,String> job : all) {
@@ -138,8 +129,6 @@ public class HBaseService {
                     && !city.equals(job.get("city"))) continue;
             if (category != null && !category.isEmpty() && !category.equals("全部")
                     && !category.equals(job.get("category"))) continue;
-            if (edu != null && !edu.isEmpty() && !edu.equals("全部")
-                    && !edu.equals(job.get("edu"))) continue;
             if (keyword != null && !keyword.isEmpty()) {
                 String title = job.getOrDefault("title", "");
                 String company = job.getOrDefault("company", "");

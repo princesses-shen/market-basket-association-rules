@@ -1,32 +1,60 @@
-# ---- Python ----
+# Python
 __pycache__/
 *.py[cod]
 *.egg-info/
-.venv/
+dist/
+build/
+*.egg
+
+# Virtual environments
 venv/
-.pytest_cache/
-.ipynb_checkpoints/
+.venv/
+env/
 
-# ---- 日志与运行时产物 ----
-*.log
-*.pid
-start_website.log
-autostart.log
-app.log
-predict.log
-
-# ---- 本机/环境相关 ----
-.env
-.env.*
-.DS_Store
-Thumbs.db
+# IDE
 .idea/
 .vscode/
-*.swp
 
-# ---- 本机私有配置（真实服务器地址 / SSH 密码，绝不入库）----
-# 模板 config/local.env.example 是要入库的，别把它一起忽略掉
-config/local.env
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
 
-# ---- WorkBuddy 本地工作状态（含机器相关路径，不入库）----
-.workbuddy/
+# Chrome profile (crawler temp)
+.chrome_profile/
+
+# TRAE config
+.trae/
+
+# Screenshots / temp files
+*.png
+boss_cdp_crawl.py
+boss_local_crawl.py
+lagou_local_crawl.py
+
+# Data files (too large or regenerable)
+data/raw/*.csv
+data/raw/*.tsv
+data/raw/*.json
+data/clean/recruit_clean.tsv
+
+# Model artifacts
+artifacts/models/*.pkl
+artifacts/models/*.joblib
+
+# Logs
+*.log
+
+# Config with credentials
+*.env
+.env
+
+# Node modules
+node_modules/
+
+# Virtual machine images
+*.vmdk
+*.vdi
+*.vhd
+*.ova
+*.ovf
