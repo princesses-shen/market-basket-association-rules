@@ -17,7 +17,11 @@ import config
 HOST = config.HBASE_HOST; PORT = config.HBASE_PORT
 
 # 数据池
-CITIES = ["北京", "上海", "广州", "深圳", "杭州", "成都", "南京", "武汉", "西安", "长沙", "苏州", "重庆", "天津", "青岛", "厦门"]
+CITIES = ["北京", "上海", "广州", "深圳", "杭州", "成都", "南京", "武汉", "西安", "长沙", "苏州", "重庆",
+          "天津", "青岛", "厦门", "宁波", "郑州", "合肥", "福州", "济南", "大连", "沈阳", "长春",
+          "哈尔滨", "石家庄", "太原", "南昌", "南宁", "昆明", "贵阳", "兰州", "西宁", "银川",
+          "乌鲁木齐", "呼和浩特", "海口", "三亚", "珠海", "东莞", "佛山", "无锡", "常州", "南通",
+          "徐州", "温州", "绍兴", "嘉兴", "泉州", "烟台", "潍坊", "洛阳"]
 TITLES = ["Java开发工程师", "Python开发工程师", "前端开发工程师", "后端开发工程师", "全栈工程师",
           "数据分析师", "算法工程师", "测试工程师", "运维工程师", "DevOps工程师",
           "产品经理", "UI设计师", "项目经理", "大数据工程师", "机器学习工程师",
@@ -87,6 +91,8 @@ def gen_jobs(conn, n=1200):
                 "info:tags": ";".join(tags),
                 "info:desc": gen_desc(title, company, city, edu, exp),
                 "info:publish_time": pub,
+                "info:owner": "demo_co" if i <= 50 else "",
+                "info:status": "active",
             })
     print(f"[灌数据] {n} 条岗位写入 recruit_job")
 
@@ -123,6 +129,44 @@ def gen_users(conn):
     print(f"  测试账号: admin/123456, xiaoliyu/123456, zhangsan/123456 ...")
 
 
+def gen_supporting_tables(conn):
+    """创建网站功能需要的辅助表，并写入本地开发用企业账号。"""
+    tables = {t.decode() if isinstance(t, bytes) else t for t in conn.tables()}
+    required = [
+        "recruit_company", "recruit_resume", "recruit_chat_session",
+        "recruit_chat_message", "recruit_application", "recruit_talent_pool",
+        "recruit_position", "recruit_salary", "recruit_salary_trend",
+        "recruit_keyword", "recruit_assoc_rules"
+    ]
+    for table_name in required:
+        if table_name not in tables:
+            conn.create_table(table_name, {"info": dict()})
+            print(f"[建表] {table_name}")
+
+    company = conn.table("recruit_company")
+    company.put("demo_co", {
+        "info:password_hash": hashlib.sha256(b"123456").hexdigest(),
+        "info:company_name": "智聘科技",
+        "info:industry": "互联网",
+        "info:city": "北京",
+        "info:scale": "150-500人",
+        "info:created_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    })
+    print("[灌数据] 企业测试账号 demo_co/123456")
+
+    # 城市统计表供数据大屏使用；城市下拉本身会直接从 recruit_job 动态读取。
+    position = conn.table("recruit_position")
+    job_table = conn.table("recruit_job")
+    city_counts = {}
+    for _, data in job_table.scan(columns=["info:city"]):
+        city = data.get(b"info:city", b"").decode("utf-8")
+        if city:
+            city_counts[city] = city_counts.get(city, 0) + 1
+    with position.batch() as batch:
+        for city, count in city_counts.items():
+            batch.put(city, {"info:position_count": str(count)})
+
+
 def main():
     print(f">>> 连接 HBase {HOST}:{PORT} ...")
     conn = happybase.Connection(HOST, PORT)
@@ -133,6 +177,9 @@ def main():
 
     print("\n>>> 生成用户数据...")
     gen_users(conn)
+
+    print("\n>>> 创建网站辅助表...")
+    gen_supporting_tables(conn)
 
     # 验证
     print("\n>>> 验证数据...")

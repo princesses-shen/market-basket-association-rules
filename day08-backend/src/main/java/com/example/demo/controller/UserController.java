@@ -29,6 +29,22 @@ public class UserController {
         return userService.login(body.get("username"), body.get("password"));
     }
 
+    // POST /api/user/change-password  登录用户修改密码
+    @PostMapping("/change-password")
+    public Map<String, Object> changePassword(
+            @RequestHeader(value="Authorization", required=false) String auth,
+            @RequestBody Map<String, String> body) {
+        if (auth == null || !auth.startsWith("Bearer ")) {
+            return Map.of("code", 1, "msg", "请重新登录后再修改密码");
+        }
+        io.jsonwebtoken.Claims claims = jwtUtil.validateToken(auth.substring(7));
+        if (claims == null || !claims.getSubject().equals(body.get("username"))) {
+            return Map.of("code", 1, "msg", "登录信息无效，请重新登录");
+        }
+        return userService.changePassword(
+                body.get("username"), body.get("oldPassword"), body.get("newPassword"));
+    }
+
     @Autowired
     private com.example.demo.util.JwtUtil jwtUtil;
 

@@ -29,6 +29,13 @@ public class CompanyController {
         return companyService.login(body.get("username"), body.get("password"));
     }
 
+    // POST /api/company/change-password  企业账号修改密码
+    @PostMapping("/change-password")
+    public Map<String, Object> changePassword(@RequestBody Map<String, String> body) throws Exception {
+        return companyService.changePassword(
+                body.get("username"), body.get("oldPassword"), body.get("newPassword"));
+    }
+
     // POST /api/company/job/publish
     @PostMapping("/job/publish")
     public Map<String, Object> publishJob(@RequestBody Map<String, String> body) throws Exception {

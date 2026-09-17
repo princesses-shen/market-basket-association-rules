@@ -121,7 +121,6 @@
 <script>
 injectNavbar('search');
 
-var CITIES = ["北京","上海","广州","深圳","杭州","成都","南京","武汉","西安","长沙","苏州","重庆","天津","青岛","厦门"];
 var curPage = 1;
 var curCity = '';
 var curKeyword = '';
@@ -137,15 +136,8 @@ function initFromURL() {
 }
 
 // 填充城市下拉
-function initCitySelect() {
-  var sel = document.getElementById('citySel');
-  CITIES.forEach(function(c) {
-    var o = document.createElement('option');
-    o.value = c; o.textContent = c;
-    if (c === curCity) o.selected = true;
-    sel.appendChild(o);
-  });
-  sel.value = curCity;
+async function initCitySelect() {
+  await loadCityOptions('citySel', '全部城市', curCity);
 }
 
 // 重置筛选
@@ -189,8 +181,7 @@ async function doSearch(page) {
 }
 
 initFromURL();
-initCitySelect();
-doSearch(1);
+initCitySelect().then(function() { doSearch(1); });
 </script>
 </body>
 </html>

@@ -6,6 +6,7 @@ __pycache__/
 venv/
 .pytest_cache/
 .ipynb_checkpoints/
+target/
 
 # ---- 日志与运行时产物 ----
 *.log

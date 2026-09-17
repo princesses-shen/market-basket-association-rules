@@ -66,7 +66,7 @@
       <div class="upload-area" id="uploadArea">
         <label class="file-label">
           点击上传简历附件（可选）
-          <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg">
+          <input type="file" id="fileInput" accept=".pdf,.doc,.docx">
         </label>
         <div class="file-name" id="fileName" style="display:none;"></div>
       </div>
@@ -96,6 +96,17 @@ var uploadedFilePath = '';
 document.getElementById('fileInput').addEventListener('change', async function() {
   var file = this.files[0];
   if (!file) return;
+  var ext = file.name.split('.').pop().toLowerCase();
+  if (['pdf', 'doc', 'docx'].indexOf(ext) < 0) {
+    alert('仅支持 PDF、DOC、DOCX 简历');
+    this.value = '';
+    return;
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    alert('简历文件不能超过 10MB');
+    this.value = '';
+    return;
+  }
   var fnEl = document.getElementById('fileName');
   fnEl.textContent = '上传中: ' + file.name + '...';
   fnEl.style.display = 'block';

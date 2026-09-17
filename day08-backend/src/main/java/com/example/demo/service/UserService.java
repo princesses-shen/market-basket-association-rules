@@ -115,4 +115,47 @@ public class UserService {
             return null;
         }
     }
+
+    // 修改密码：同时兼容历史 SHA-256 密码和网页注册产生的 BCrypt 密码
+    public Map<String, Object> changePassword(String username, String oldPassword, String newPassword) {
+        Map<String, Object> result = new HashMap<>();
+        if (newPassword == null || newPassword.length() < 6) {
+            result.put("code", 1);
+            result.put("msg", "新密码至少需要 6 位");
+            return result;
+        }
+        if (newPassword.equals(oldPassword)) {
+            result.put("code", 1);
+            result.put("msg", "新密码不能与原密码相同");
+            return result;
+        }
+        try {
+            Map<String, String> user = hbase.getRow("recruit_user", username, "info");
+            if (user == null || !passwordMatches(oldPassword, user.get("password"))) {
+                result.put("code", 1);
+                result.put("msg", "原密码错误");
+                return result;
+            }
+            hbase.putRow("recruit_user", username, "info",
+                    Map.of("password", encoder.encode(newPassword),
+                           "password_updated", new Date().toString()));
+            result.put("code", 0);
+            result.put("msg", "密码修改成功，请重新登录");
+        } catch (Exception e) {
+            result.put("code", 1);
+            result.put("msg", "服务器错误: " + e.getMessage());
+        }
+        return result;
+    }
+
+    private boolean passwordMatches(String password, String storedHash) throws Exception {
+        if (password == null || storedHash == null || storedHash.isEmpty()) return false;
+        if (storedHash.startsWith("$2")) return encoder.matches(password, storedHash);
+        StringBuilder sb = new StringBuilder();
+        for (byte b : java.security.MessageDigest.getInstance("SHA-256")
+                .digest(password.getBytes(java.nio.charset.StandardCharsets.UTF_8))) {
+            sb.append(String.format("%02x", b));
+        }
+        return sb.toString().equals(storedHash);
+    }
 }

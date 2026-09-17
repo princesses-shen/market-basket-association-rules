@@ -261,8 +261,30 @@ public class ChatService {
     }
 
     // 获取某个用户的完整简历 (人才库点击查看用)
-    public Map<String, String> getTalentResume(String userUsername) throws Exception {
-        return hbase.getRow(TBL_RESUME, "user_" + userUsername, CF);
+    public Map<String, String> getTalentResume(String companyUsername, String userUsername) throws Exception {
+        Map<String, String> resume = hbase.getRow(TBL_RESUME, "user_" + userUsername, CF);
+        if (resume == null) resume = new HashMap<>();
+
+        // 找出该候选人投递给当前企业的最新附件简历，附加到网页简历结果中
+        List<Map<String, String>> applications = hbase.scanAll(TBL_APP, CF);
+        Map<String, String> latest = null;
+        for (Map<String, String> app : applications) {
+            if (!userUsername.equals(app.get("username"))) continue;
+            if (companyUsername != null && !companyUsername.isEmpty()
+                    && !companyUsername.equals(app.get("companyUsername"))) continue;
+            if (app.getOrDefault("attachmentPath", "").isEmpty()) continue;
+            if (latest == null || app.getOrDefault("applyTime", "")
+                    .compareTo(latest.getOrDefault("applyTime", "")) > 0) {
+                latest = app;
+            }
+        }
+        if (latest != null) {
+            resume.put("attachmentName", latest.getOrDefault("attachmentName", ""));
+            resume.put("attachmentPath", latest.getOrDefault("attachmentPath", ""));
+            resume.put("attachmentJobTitle", latest.getOrDefault("jobTitle", ""));
+            resume.put("attachmentApplyTime", latest.getOrDefault("applyTime", ""));
+        }
+        return resume;
     }
 
     private String buildSessionKey(String user, String company, String jobId) {

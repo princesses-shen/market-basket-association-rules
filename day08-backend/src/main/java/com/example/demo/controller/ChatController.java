@@ -74,7 +74,9 @@ public class ChatController {
 
     // GET /api/chat/talent/resume?userUsername=  查看某人才完整简历
     @GetMapping("/talent/resume")
-    public Map<String, String> talentResume(@RequestParam String userUsername) throws Exception {
-        return chatService.getTalentResume(userUsername);
+    public Map<String, String> talentResume(
+            @RequestParam String userUsername,
+            @RequestParam(defaultValue = "") String companyUsername) throws Exception {
+        return chatService.getTalentResume(companyUsername, userUsername);
     }
 }

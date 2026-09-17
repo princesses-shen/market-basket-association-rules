@@ -60,28 +60,10 @@ if errorlevel 1 (
 REM ---------------- [2/6] big data layer ----------------
 echo.
 echo [2/6] Checking big data layer (Hadoop / HBase / Thrift) ...
-ssh %SSH_OPTS% %VM_USER%@%VM_IP% "test $(jps 2>/dev/null | grep -cE 'HMaster|NameNode|ThriftServer') -ge 3" >nul 2>&1
+python "%~dp0scripts\deploy_local_vm.py" start >> "%LOG%" 2>&1
 if errorlevel 1 (
-    echo   Incomplete. Trying to start it over SSH ...
-    call :log "[2/6] incomplete, running vm_autostart.sh"
-    ssh %SSH_OPTS% %VM_USER%@%VM_IP% "bash $HOME/vm_autostart.sh" >nul 2>&1
-    if errorlevel 1 (
-        echo   [WARN] SSH failed. Run "ssh %VM_USER%@%VM_IP% echo OK" and see 6.8.3.
-        call :log "[2/6] SSH FAILED - check key setup"
-    ) else (
-        echo   vm_autostart.sh launched. Waiting 40s ...
-        call :log "[2/6] waiting 40s"
-        timeout /t 40 /nobreak >nul
-    )
-    ssh %SSH_OPTS% %VM_USER%@%VM_IP% "test $(jps 2>/dev/null | grep -cE 'HMaster|NameNode|ThriftServer') -ge 3" >nul 2>&1
-    if errorlevel 1 (
-        echo   [WARN] Big data layer still incomplete. Data pages may error.
-        echo          Check VM log: ~/autostart.log
-        call :log "[2/6] WARN still incomplete"
-    ) else (
-        echo   Big data layer OK.
-        call :log "[2/6] OK"
-    )
+    echo   [WARN] Could not start services. Check that VMware is running and review start_website.log.
+    call :log "[2/6] deploy_local_vm.py start FAILED"
 ) else (
     echo   Big data layer OK.
     call :log "[2/6] OK"
@@ -109,7 +91,7 @@ powershell -NoProfile -Command "try{Invoke-WebRequest -Uri 'http://%VM_IP%:%PRED
 if errorlevel 1 (
     echo   Not running. Starting it over SSH ...
     call :log "[4/6] not running, starting serve_api.py"
-    ssh %SSH_OPTS% %VM_USER%@%VM_IP% "cd $HOME/predict && nohup python3 serve_api.py %PREDICT_PORT% > predict.log 2>&1 < /dev/null &" >nul 2>&1
+    ssh %SSH_OPTS% %VM_USER%@%VM_IP% "cd $HOME/predict && nohup .venv/bin/python serve_api.py %PREDICT_PORT% > predict.log 2>&1 < /dev/null &" >nul 2>&1
     echo   Waiting 8s for predict service ...
     timeout /t 8 /nobreak >nul
 ) else (
@@ -142,7 +124,8 @@ echo.
 echo ============================================
 echo   Done. Website: http://%VM_IP%:%BACKEND_PORT%/
 echo   Dashboard   : http://%VM_IP%:%BACKEND_PORT%/dashboard.html
-echo   Test account: admin / 123456
+echo   User account: admin / 123456
+echo   Company     : demo_co / 123456
 echo   Full log    : %LOG%
 echo ============================================
 echo.

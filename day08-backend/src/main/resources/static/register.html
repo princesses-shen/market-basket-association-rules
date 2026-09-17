@@ -35,8 +35,6 @@
       <input type="text" id="industry" placeholder="所属行业 (如 互联网/金融/教育)" class="login-input">
       <select id="compCity" class="login-input">
         <option value="">选择城市</option>
-        <option>北京</option><option>上海</option><option>广州</option><option>深圳</option>
-        <option>杭州</option><option>成都</option><option>南京</option><option>武汉</option>
       </select>
       <select id="scale" class="login-input">
         <option value="">公司规模</option>
@@ -92,6 +90,7 @@
 <script src="/js/common.js"></script>
 <script>
 injectNavbar('register');
+loadCityOptions('compCity', '选择城市');
 
 // URL 参数自动切企业
 var params = new URLSearchParams(location.search);

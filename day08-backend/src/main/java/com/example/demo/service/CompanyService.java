@@ -66,6 +66,38 @@ public class CompanyService {
         return result;
     }
 
+    // 企业账号修改密码
+    public Map<String, Object> changePassword(String username, String oldPassword, String newPassword) throws Exception {
+        Map<String, Object> result = new HashMap<>();
+        if (newPassword == null || newPassword.length() < 6) {
+            result.put("code", 1);
+            result.put("msg", "新密码至少需要 6 位");
+            return result;
+        }
+        if (newPassword.equals(oldPassword)) {
+            result.put("code", 1);
+            result.put("msg", "新密码不能与原密码相同");
+            return result;
+        }
+        Map<String, String> company = hbase.getRow(TABLE_COMPANY, username, CF);
+        if (company == null || company.isEmpty()) {
+            result.put("code", 1);
+            result.put("msg", "企业账号不存在");
+            return result;
+        }
+        if (!sha256(oldPassword).equals(company.get("password_hash"))) {
+            result.put("code", 1);
+            result.put("msg", "原密码错误");
+            return result;
+        }
+        hbase.putRow(TABLE_COMPANY, username, CF,
+                Map.of("password_hash", sha256(newPassword),
+                       "password_updated", new Date().toString()));
+        result.put("code", 0);
+        result.put("msg", "密码修改成功，请重新登录");
+        return result;
+    }
+
     // 企业发布岗位
     public Map<String, Object> publishJob(String companyUsername, String title, String city, int salLow, int salHigh,
                                             String edu, String exp, String tags, String category, String desc) throws Exception {

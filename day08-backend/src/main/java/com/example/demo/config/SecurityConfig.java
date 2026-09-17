@@ -38,7 +38,7 @@ public class SecurityConfig {
                 // 静态资源放行
                 .antMatchers("/", "/**/*.html", "/**/*.js", "/**/*.css",
                              "/**/*.png", "/**/*.jpg", "/**/*.ico", "/js/**", "/css/**",
-                             "/uploads/**").permitAll()
+                             "/uploads/**", "/api/files/**").permitAll()
                 // 公开接口放行
                 .antMatchers("/api/user/register", "/api/user/login",
                              "/api/company/register", "/api/company/login").permitAll()

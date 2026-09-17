@@ -61,12 +61,15 @@ public class JobController {
         return hbase.scanJobs("", 0, 0, "", "全部", "全部", 6);
     }
 
-    // GET /api/job/cities  城市列表（从 position 表读）
+    // GET /api/job/cities  城市列表（直接从岗位表动态去重，避免被固定热门城市限制）
     @GetMapping("/cities")
     public List<String> cities() throws Exception {
-        Map<String,String> posMap = hbase.scan("recruit_position", "info", "position_count");
-        List<String> cities = new ArrayList<>(posMap.keySet());
-        Collections.sort(cities);
-        return cities;
+        List<Map<String, String>> jobs = hbase.scanAll("recruit_job", "info");
+        Set<String> cities = new TreeSet<>();
+        for (Map<String, String> job : jobs) {
+            String city = job.getOrDefault("city", "").trim();
+            if (!city.isEmpty()) cities.add(city);
+        }
+        return new ArrayList<>(cities);
     }
 }
