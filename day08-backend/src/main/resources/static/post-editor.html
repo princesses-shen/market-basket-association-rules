@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>发帖 - 求职咨询</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+  .editor-page { max-width: 800px; margin: 40px auto; padding: 0 20px; }
+  .editor-card {
+    background: #fff; border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 40px;
+  }
+  .editor-card h2 {
+    font-size: 22px; color: var(--primary-dark);
+    margin-bottom: 24px; padding-bottom: 12px;
+    border-bottom: 2px solid var(--border);
+  }
+  .form-group { margin-bottom: 20px; }
+  .form-group label {
+    display: block; font-size: 14px; font-weight: 600;
+    color: var(--text); margin-bottom: 8px;
+  }
+  .form-group input, .form-group select, .form-group textarea {
+    width: 100%; padding: 12px 16px;
+    border: 1px solid var(--border); border-radius: 8px;
+    font-size: 14px; outline: none; box-sizing: border-box;
+    transition: border-color .2s; font-family: inherit;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    border-color: var(--primary);
+  }
+  .form-group textarea { min-height: 300px; line-height: 1.8; resize: vertical; }
+  .form-group .hint { font-size: 12px; color: var(--text-light); margin-top: 4px; }
+  .editor-actions {
+    display: flex; gap: 12px; margin-top: 24px;
+    padding-top: 20px; border-top: 1px solid var(--border);
+  }
+  .btn-primary {
+    padding: 12px 32px; background: var(--primary);
+    color: #fff; border: none; border-radius: 8px;
+    font-size: 15px; cursor: pointer; transition: background .2s;
+  }
+  .btn-primary:hover { background: var(--primary-dark); }
+  .btn-secondary {
+    padding: 12px 32px; background: #fff;
+    color: var(--text-light); border: 1px solid var(--border);
+    border-radius: 8px; font-size: 15px; cursor: pointer;
+    transition: all .2s;
+  }
+  .btn-secondary:hover { border-color: var(--primary); color: var(--primary); }
+  .login-tip {
+    text-align: center; padding: 60px 0; color: var(--text-light);
+  }
+  .login-tip a { color: var(--primary); }
+</style>
+</head>
+<body>
+<div id="navbar-container"></div>
+
+<div class="editor-page">
+  <div class="editor-card" id="editorBox">
+    <div class="login-tip">请先 <a href="/login.html?redirect=post-editor.html">登录</a> 后再发帖</div>
+  </div>
+</div>
+
+<script src="js/common.js"></script>
+<script>
+  const user = getCurrentUser();
+  const editId = new URLSearchParams(location.search).get('edit');
+  var FORUM_CATEGORIES = ["求职攻略", "转行经验", "薪资谈判", "职场生存", "职场热点", "面试技巧"];
+
+  // 先从后端获取分类列表，再初始化页面
+  api('/api/forum/categories')
+    .then(cats => { if (Array.isArray(cats) && cats.length) FORUM_CATEGORIES = cats; })
+    .catch(() => {})
+    .finally(() => initPage());
+
+  function initPage() {
+    if (!user) {
+      // 未登录，显示提示
+      return;
+    }
+    if (editId) {
+      // 编辑模式：用 api() 函数加载帖子内容（自动带 token）
+      api('/api/forum/detail/' + editId)
+        .then(article => {
+          if (article.error || article.author !== user.username) {
+            document.getElementById('editorBox').innerHTML =
+              '<div class="login-tip">只能编辑自己的帖子 <a href="/forum.html">返回论坛</a></div>';
+            return;
+          }
+          renderEditor(article);
+        })
+        .catch(err => {
+          document.getElementById('editorBox').innerHTML =
+            '<div class="login-tip">加载失败：' + err.message + ' <a href="/forum.html">返回论坛</a></div>';
+        });
+    } else {
+      // 发帖模式
+      renderEditor(null);
+    }
+  }
+
+  function renderEditor(article) {
+    const isEdit = !!article;
+    document.getElementById('editorBox').innerHTML = `
+      <h2>${isEdit ? '编辑帖子' : '发布新帖'}</h2>
+      <div class="form-group">
+        <label>标题</label>
+        <input type="text" id="postTitle" placeholder="请输入标题" value="${article ? article.title : ''}">
+      </div>
+      <div class="form-group">
+        <label>分类</label>
+        <select id="postCategory">
+          ${FORUM_CATEGORIES.filter(c => c !== '全部').map(c =>
+            `<option value="${c}" ${article && article.category === c ? 'selected' : ''}>${c}</option>`
+          ).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>摘要（可选）</label>
+        <input type="text" id="postSummary" placeholder="一句话概括内容，留空则自动截取" value="${article ? article.summary : ''}">
+      </div>
+      <div class="form-group">
+        <label>标签（可选，逗号分隔）</label>
+        <input type="text" id="postTags" placeholder="如：Java,面试,秋招" value="${article ? (article.tags || []).join(',') : ''}">
+      </div>
+      <div class="form-group">
+        <label>正文</label>
+        <textarea id="postContent" placeholder="支持 HTML 标签格式（h2/p/ul/li/strong等）">${article ? article.content : ''}</textarea>
+        <div class="hint">提示：可以使用 HTML 标签来排版，如 &lt;h2&gt;标题&lt;/h2&gt;、&lt;p&gt;段落&lt;/p&gt;、&lt;ul&gt;&lt;li&gt;列表项&lt;/li&gt;&lt;/ul&gt;</div>
+      </div>
+      <div class="editor-actions">
+        <button class="btn-primary" onclick="submitPost(${isEdit ? 'true' : 'false'})">${isEdit ? '保存修改' : '发布帖子'}</button>
+        <button class="btn-secondary" onclick="location.href='/forum.html'">取消</button>
+      </div>
+    `;
+  }
+
+  async function submitPost(isEdit) {
+    const title = document.getElementById('postTitle').value.trim();
+    const content = document.getElementById('postContent').value.trim();
+    const category = document.getElementById('postCategory').value;
+    const summary = document.getElementById('postSummary').value.trim();
+    const tagsStr = document.getElementById('postTags').value.trim();
+    const tags = tagsStr ? tagsStr.split(/[,，]/).map(t => t.trim()).filter(Boolean) : [];
+
+    if (!title) { alert('请输入标题'); return; }
+    if (!content) { alert('请输入正文内容'); return; }
+
+    const url = isEdit ? '/api/forum/update/' + editId : '/api/forum/create';
+    const body = JSON.stringify({ title, content, category, summary, tags });
+
+    try {
+      const result = await api(url, { method: 'POST', body });
+      if (result.code === 0) {
+        alert(result.msg);
+        location.href = '/article.html?id=' + result.post.id;
+      } else {
+        alert(result.msg || '操作失败');
+      }
+    } catch (err) {
+      alert('操作失败：' + err.message);
+    }
+  }
+
+  loadNav('forum');
+</script>
+</body>
+</html>

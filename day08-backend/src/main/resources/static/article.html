@@ -338,6 +338,64 @@
   const articleId = new URLSearchParams(location.search).get('id') || 'art_001';
   let liked = false;
 
+  function renderAuthorActions(article) {
+    const user = getCurrentUser();
+    if (!user) return '';
+    var role = localStorage.getItem('recruit_role') || '';
+    var isOwner = article.author === user.username;
+    var isAdmin = role === 'admin';
+    if (!isOwner && !isAdmin) return '';
+    var html = '';
+    if (isOwner) {
+      html += '<button onclick="location.href=\'post-editor.html?edit=' + article.id + '\'" style="border-color:#4caf50;color:#4caf50;">✏️ 编辑</button>';
+      html += '<button onclick="deletePost(\'' + article.id + '\')" style="border-color:#f44336;color:#f44336;">🗑️ 删除</button>';
+    }
+    if (isAdmin) {
+      if (article.pinned) {
+        html += '<button onclick="togglePin(\'' + article.id + '\', false)" style="border-color:#ff9800;color:#ff9800;">📌 取消置顶</button>';
+      } else {
+        html += '<button onclick="togglePin(\'' + article.id + '\', true)" style="border-color:#ff9800;color:#ff9800;">📌 置顶</button>';
+      }
+      if (!isOwner) {
+        html += '<button onclick="deletePost(\'' + article.id + '\')" style="border-color:#f44336;color:#f44336;">🗑️ 删除</button>';
+      }
+    }
+    return html;
+  }
+
+  async function deletePost(postId) {
+    if (!confirm('确定要删除这篇帖子吗？此操作不可撤销。')) return;
+    var user = getCurrentUser();
+    if (!user) { alert('请先登录'); return; }
+    try {
+      var result = await api('/api/forum/delete/' + postId, { method: 'POST', body: JSON.stringify({}) });
+      if (result.code === 0) {
+        alert('删除成功');
+        location.href = '/forum.html';
+      } else {
+        alert(result.msg || '删除失败');
+      }
+    } catch (err) {
+      alert('操作失败：' + err.message);
+    }
+  }
+
+  async function togglePin(postId, pinned) {
+    var user = getCurrentUser();
+    if (!user) { alert('请先登录'); return; }
+    try {
+      var result = await api('/api/forum/pin/' + postId, { method: 'POST', body: JSON.stringify({ pinned: pinned }) });
+      if (result.code === 0) {
+        alert(result.msg);
+        location.reload();
+      } else {
+        alert(result.msg || '操作失败');
+      }
+    } catch (err) {
+      alert('操作失败：' + err.message);
+    }
+  }
+
   function loadArticle() {
     fetch('/api/forum/detail/' + articleId)
       .then(r => r.json())
@@ -365,10 +423,11 @@
             <button id="likeBtn" onclick="toggleLike()">
               👍 <span id="likeCount">${a.likes}</span> 点赞
             </button>
-            <button onclick="document.getElementById('commentInputBox').scrollIntoView({behavior:'smooth'});document.querySelector('.comment-input textarea').focus();">
+            <button onclick="document.getElementById('commentInputBox').scrollIntoView({behavior:'smooth'});document.querySelector('.comment-input textarea')?.focus();">
               💬 发表评论
             </button>
             <button onclick="shareArticle()">🔗 分享</button>
+            ${renderAuthorActions(a)}
           </div>
         `;
 
@@ -409,12 +468,53 @@
               </div>
               <div class="comment-content">${c.content}</div>
               <div class="comment-footer">
-                <span>👍 ${c.likes}</span>
-                <span>💬 回复</span>
+                <span class="comment-like-btn" data-id="${c.id}" style="cursor:pointer;">👍 <span class="like-count">${c.likes}</span></span>
+                <span class="comment-reply-btn" data-author="${c.author}" style="cursor:pointer;">💬 回复</span>
               </div>
             </div>
           </li>
         `).join('');
+        // 绑定评论点赞
+        document.querySelectorAll('.comment-like-btn').forEach(btn => {
+          btn.addEventListener('click', function() {
+            if (this.dataset.liked === 'true') return;
+            var cnt = this.querySelector('.like-count');
+            cnt.textContent = parseInt(cnt.textContent) + 1;
+            this.dataset.liked = 'true';
+            this.style.color = 'var(--primary)';
+            this.style.fontWeight = 'bold';
+          });
+        });
+        // 绑定回复
+        document.querySelectorAll('.comment-reply-btn').forEach(btn => {
+          btn.addEventListener('click', function() {
+            var author = this.dataset.author;
+            var user = getCurrentUser();
+            if (!user) {
+              alert('请先登录后再回复');
+              location.href = 'login.html?redirect=article.html?id=' + articleId;
+              return;
+            }
+            // 重新渲染评论输入框（确保登录后 textarea 存在）
+            renderCommentInput();
+            var textarea = document.getElementById('commentText');
+            if (textarea) {
+              textarea.value = '回复@' + author + '：';
+              textarea.focus();
+              textarea.scrollIntoView({behavior:'smooth', block:'center'});
+            } else {
+              // 兜底：如果还是没有 textarea，直接创建
+              var box = document.getElementById('commentInputBox');
+              if (box) {
+                box.innerHTML = '<div style="width:40px;height:40px;border-radius:50%;background:#e8f0fe;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">😊</div><textarea id="commentText" placeholder="写下你的想法..."></textarea><button onclick="submitComment()">发表评论</button>';
+                var ta = document.getElementById('commentText');
+                ta.value = '回复@' + author + '：';
+                ta.focus();
+                ta.scrollIntoView({behavior:'smooth', block:'center'});
+              }
+            }
+          });
+        });
       });
   }
 
@@ -432,7 +532,10 @@
   function toggleLike() {
     if (liked) return;
     fetch('/api/forum/like/' + articleId, { method: 'POST' })
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw new Error('网络错误');
+        return r.json();
+      })
       .then(res => {
         if (res.success) {
           liked = true;
@@ -440,7 +543,17 @@
           btn.classList.add('liked');
           const cnt = document.getElementById('likeCount');
           cnt.textContent = parseInt(cnt.textContent) + 1;
+        } else {
+          alert('点赞失败，请稍后重试');
         }
+      })
+      .catch(err => {
+        // 即使网络失败也前端计数
+        liked = true;
+        const btn = document.getElementById('likeBtn');
+        if (btn) btn.classList.add('liked');
+        const cnt = document.getElementById('likeCount');
+        if (cnt) cnt.textContent = parseInt(cnt.textContent) + 1;
       });
   }
 
@@ -470,29 +583,25 @@
     }
   }
 
-  function submitComment() {
+  async function submitComment() {
     const text = document.getElementById('commentText').value.trim();
     if (!text) { alert('请输入评论内容'); return; }
     const user = getCurrentUser();
     if (!user) { alert('请先登录'); return; }
-
-    fetch('/api/forum/comment/' + articleId, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + user.token
-      },
-      body: JSON.stringify({ content: text })
-    })
-      .then(r => r.json())
-      .then(res => {
-        if (res.success) {
-          document.getElementById('commentText').value = '';
-          loadComments();
-        } else {
-          alert(res.msg || '评论失败');
-        }
+    try {
+      var res = await api('/api/forum/comment/' + articleId, {
+        method: 'POST',
+        body: JSON.stringify({ content: text })
       });
+      if (res.success) {
+        document.getElementById('commentText').value = '';
+        loadComments();
+      } else {
+        alert(res.msg || '评论失败');
+      }
+    } catch (err) {
+      alert('评论失败：' + err.message);
+    }
   }
 
   // 初始化
