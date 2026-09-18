@@ -5,6 +5,54 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>岗位详情 · 智聘</title>
 <link rel="stylesheet" href="/css/style.css">
+<style>
+.btn-apply {
+  padding: 12px 40px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all .2s;
+}
+.btn-apply:hover { background: var(--primary-dark); transform: translateY(-1px); }
+.btn-chat-go {
+  margin-left: 12px;
+  padding: 12px 40px;
+  background: var(--success);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all .2s;
+}
+.btn-chat-go:hover { opacity: .9; }
+.upload-area {
+  margin: 16px 0;
+  padding: 16px;
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+  text-align: center;
+  transition: all .2s;
+}
+.upload-area:hover { border-color: var(--primary); background: var(--bg); }
+.upload-area .file-label {
+  font-size: 14px;
+  color: var(--text-light);
+  cursor: pointer;
+  display: inline-block;
+}
+.upload-area .file-label:hover { color: var(--primary); }
+.upload-area input[type="file"] { display: none; }
+.upload-area .file-name {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--success);
+  font-weight: 500;
+}
+</style>
 </head>
 <body>
 <div id="navbar-container"></div>
@@ -13,6 +61,19 @@
   <div class="detail-main">
     <div class="card" id="detailCard">
       <p style="text-align:center;padding:40px;color:#999;">加载中...</p>
+    </div>
+    <div class="card" id="applyCard" style="display:none;">
+      <div class="upload-area" id="uploadArea">
+        <label class="file-label">
+          点击上传简历附件（可选）
+          <input type="file" id="fileInput" accept=".pdf,.doc,.docx">
+        </label>
+        <div class="file-name" id="fileName" style="display:none;"></div>
+      </div>
+      <div style="text-align:center;">
+        <button class="btn-apply" id="btnApply" onclick="applyJob()">投递简历</button>
+        <button class="btn-chat-go" id="btnChat" style="display:none;" onclick="location.href='/user/chat.html?sk=' + currentSessionKey">查看聊天</button>
+      </div>
     </div>
   </div>
   <div class="detail-side">
@@ -27,9 +88,52 @@
 <script>
 injectNavbar('');
 
+var currentJobId = '';
+var currentSessionKey = '';
+var uploadedFileName = '';
+var uploadedFilePath = '';
+
+document.getElementById('fileInput').addEventListener('change', async function() {
+  var file = this.files[0];
+  if (!file) return;
+  var ext = file.name.split('.').pop().toLowerCase();
+  if (['pdf', 'doc', 'docx'].indexOf(ext) < 0) {
+    alert('仅支持 PDF、DOC、DOCX 简历');
+    this.value = '';
+    return;
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    alert('简历文件不能超过 10MB');
+    this.value = '';
+    return;
+  }
+  var fnEl = document.getElementById('fileName');
+  fnEl.textContent = '上传中: ' + file.name + '...';
+  fnEl.style.display = 'block';
+
+  var formData = new FormData();
+  formData.append('file', file);
+  try {
+    var resp = await fetch('/api/upload', { method: 'POST', body: formData });
+    var data = await resp.json();
+    if (data.code === 0) {
+      uploadedFileName = data.fileName;
+      uploadedFilePath = data.filePath;
+      fnEl.textContent = '已上传: ' + data.fileName;
+      fnEl.style.color = 'var(--success)';
+    } else {
+      fnEl.textContent = '上传失败: ' + data.msg;
+      fnEl.style.color = '#ff4d4f';
+    }
+  } catch(e) {
+    fnEl.textContent = '上传失败，请重试';
+    fnEl.style.color = '#ff4d4f';
+  }
+});
+
 async function loadDetail() {
-  var id = new URLSearchParams(location.search).get('id') || 'job_00001';
-  var job = await api('/api/job/detail/' + id);
+  currentJobId = new URLSearchParams(location.search).get('id') || 'job_00001';
+  var job = await api('/api/job/detail/' + currentJobId);
   if (job.error) {
     document.getElementById('detailCard').innerHTML = '<p style="text-align:center;padding:40px;color:#999;">' + job.error + '</p>';
     return;
@@ -51,11 +155,38 @@ async function loadDetail() {
     + '<div style="border-top:1px solid var(--border);margin:20px 0;"></div>'
     + '<div class="desc-box">' + (job.desc||'暂无描述') + '</div>';
 
+  // 投递区：只有登录的求职者能投递；已投递过则直接给出聊天入口。
+  var username = currentUser();
+  var role = localStorage.getItem('recruit_role') || 'user';
+  if (job.status === 'recalled') {
+    // 岗位已停止招聘，不展示投递入口
+  } else if (!username) {
+    document.getElementById('applyCard').style.display = 'block';
+    document.getElementById('uploadArea').style.display = 'none';
+    document.getElementById('btnApply').textContent = '登录后投递';
+    document.getElementById('btnApply').onclick = function() {
+      alert('请先登录后再投递');
+      location.href = '/login.html';
+    };
+  } else if (role === 'user') {
+    document.getElementById('applyCard').style.display = 'block';
+    try {
+      var apps = await api('/api/chat/my-applications?username=' + username);
+      var alreadyApplied = apps.find(function(a){ return a.jobId === currentJobId; });
+      if (alreadyApplied) {
+        currentSessionKey = alreadyApplied.sessionKey || ('sess_' + username + '_' + (job.owner||'') + '_' + currentJobId);
+        document.getElementById('btnApply').style.display = 'none';
+        document.getElementById('uploadArea').style.display = 'none';
+        document.getElementById('btnChat').style.display = 'inline-block';
+      }
+    } catch(e) {}
+  }
+
   // 推荐相关岗位
   var related = await api('/api/job/search?city=' + (job.city||'') + '&size=5');
   var el = document.getElementById('relatedList');
   if (related.list && related.list.length > 0) {
-    el.innerHTML = related.list.filter(function(j){return j.rowKey !== id;}).slice(0,4).map(function(j){
+    el.innerHTML = related.list.filter(function(j){return j.rowKey !== currentJobId;}).slice(0,4).map(function(j){
       return '<div class="job-card" style="margin-bottom:10px;padding:12px;" onclick="location.href=\'/detail.html?id=' + j.rowKey + '\'">'
         + '<div class="job-main"><div class="job-title" style="font-size:15px;">' + (j.title||'') + '</div>'
         + '<div class="job-company" style="font-size:12px;">' + (j.company||'') + '</div></div>'
@@ -63,6 +194,33 @@ async function loadDetail() {
     }).join('');
   } else {
     el.innerHTML = '<p style="color:#999;text-align:center;">暂无推荐</p>';
+  }
+}
+
+async function applyJob() {
+  var username = currentUser();
+  if (!username) {
+    alert('请先登录后再投递');
+    location.href = '/login.html';
+    return;
+  }
+  var body = { username: username, jobId: currentJobId };
+  if (uploadedFileName) {
+    body.attachmentName = uploadedFileName;
+    body.attachmentPath = uploadedFilePath;
+  }
+  var res = await api('/api/chat/apply', {
+    method: 'POST',
+    body: JSON.stringify(body)
+  });
+  if (res.code === 0) {
+    currentSessionKey = res.sessionKey || '';
+    document.getElementById('btnApply').style.display = 'none';
+    document.getElementById('uploadArea').style.display = 'none';
+    document.getElementById('btnChat').style.display = 'inline-block';
+    alert(res.msg);
+  } else {
+    alert(res.msg);
   }
 }
 

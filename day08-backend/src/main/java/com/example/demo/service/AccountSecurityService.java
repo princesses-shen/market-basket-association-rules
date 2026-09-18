@@ -115,6 +115,31 @@ public class AccountSecurityService {
         result.put("token", jwt.generateToken(username, type, number(row, "credential_version")));
         return result;
     }
+    // 登录后修改密码：校验原密码（兼容历史 SHA-256 与 BCrypt），原子写入新密码，
+    // 并递增 credential_version 让此前签发的令牌全部失效。业务失败以 code/msg 返回，
+    // 便于前端直接展示提示，不触发全局的 401 重新登录跳转。
+    public Map<String, Object> changePassword(AccountType type, String username,
+                                             String oldPassword, String newPassword) throws Exception {
+        if (type == AccountType.admin) return Map.of("code", 1, "msg", "不支持修改管理员密码");
+        if (username == null || username.isBlank()) return Map.of("code", 1, "msg", "请先登录");
+        if (newPassword == null || newPassword.length() < 6) return Map.of("code", 1, "msg", "新密码至少需要 6 位");
+        if (newPassword.getBytes(StandardCharsets.UTF_8).length > 72) return Map.of("code", 1, "msg", "新密码不能超过 72 字节");
+        if (newPassword.equals(oldPassword)) return Map.of("code", 1, "msg", "新密码不能与原密码相同");
+        for (int retry = 0; retry < 100; retry++) {
+            Map<String, String> row = hbase.getRow(type.table, username, "info");
+            if (row == null) return Map.of("code", 1, "msg", "账号不存在");
+            if (!matches(oldPassword, row.get(type.passwordColumn)))
+                return Map.of("code", 1, "msg", "原密码错误");
+            Map<String, String> update = new HashMap<>();
+            update.put(type.passwordColumn, encoder.encode(newPassword));
+            update.put("password_updated", new Date().toString());
+            update.put("credential_version", Long.toString(number(row, "credential_version") + 1));
+            // 改密不解封账号，也不清零登录失败次数。
+            if (change(type, username, row, update))
+                return Map.of("code", 0, "msg", "密码修改成功，请重新登录");
+        }
+        return Map.of("code", 1, "msg", "请求繁忙，请稍后重试");
+    }
     public Map<String, Object> accounts(String type, String keyword, String status, int page, int size) throws Exception {
         if (page < 1 || size < 1 || size > 100 || keyword.length() > 64
                 || !Arrays.asList("all", "blocked", "active").contains(status))

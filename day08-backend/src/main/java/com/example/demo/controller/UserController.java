@@ -29,6 +29,14 @@ public class UserController {
         return userService.login(body.get("username"), body.get("password"));
     }
 
+    // POST /api/user/change-password  登录用户修改密码（身份取自 JWT，不采用请求体里的用户名）
+    @PostMapping("/change-password")
+    public Map<String, Object> changePassword(java.security.Principal principal,
+                                              @RequestBody Map<String, String> body) throws Exception {
+        return userService.changePassword(principal.getName(), body.get("oldPassword"), body.get("newPassword"));
+    }
+
+    // GET /api/user/profile  (需 JWT)
     @GetMapping("/profile")
     public Map<String, String> profile(java.security.Principal principal) throws Exception {
         return userService.profile(principal.getName());

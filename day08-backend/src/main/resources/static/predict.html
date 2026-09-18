@@ -23,21 +23,7 @@
       <div class="form-group">
         <label>城市</label>
         <select id="citySel" class="form-select">
-          <option value="北京">北京</option>
-          <option value="上海">上海</option>
-          <option value="广州">广州</option>
-          <option value="深圳">深圳</option>
-          <option value="杭州">杭州</option>
-          <option value="成都">成都</option>
-          <option value="南京">南京</option>
-          <option value="武汉">武汉</option>
-          <option value="西安">西安</option>
-          <option value="长沙">长沙</option>
-          <option value="苏州">苏州</option>
-          <option value="重庆">重庆</option>
-          <option value="天津">天津</option>
-          <option value="青岛">青岛</option>
-          <option value="厦门">厦门</option>
+          <option value="">选择城市</option>
         </select>
       </div>
 
@@ -211,6 +197,7 @@
 <script src="/js/common.js"></script>
 <script>
 injectNavbar('predict');
+loadCityOptions('citySel', '选择城市', '北京');
 
 async function loadOverview() {
   try {

@@ -85,6 +85,6 @@ public class ChatController {
     @GetMapping("/talent/resume")
     public Map<String, String> talentResume(@RequestParam String userUsername) throws Exception {
         access.talent(userUsername);
-        return chatService.getTalentResume(userUsername);
+        return chatService.getTalentResume(access.username(), userUsername);
     }
 }

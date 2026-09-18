@@ -36,6 +36,12 @@ public class CompanyService {
         return accounts.login(com.example.demo.security.AccountType.company, username, password);
     }
 
+    // 企业账号修改密码：与用户侧共用账号安全服务的校验与写入逻辑
+    // （企业密码列是 password_hash，由该服务按 AccountType 决定，不能用 SHA-256 直接比对）。
+    public Map<String, Object> changePassword(String username, String oldPassword, String newPassword) throws Exception {
+        return accounts.changePassword(com.example.demo.security.AccountType.company, username, oldPassword, newPassword);
+    }
+
     // 企业发布岗位
     public Map<String, Object> publishJob(String companyUsername, String title, String city, int salLow, int salHigh,
                                             String edu, String exp, String tags, String category, String desc) throws Exception {

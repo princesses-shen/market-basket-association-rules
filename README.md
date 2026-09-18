@@ -146,6 +146,27 @@ python main.py          # 默认 DATA_SOURCE=skills，生成 CSV + 图表到 out
 
 本项目由 Python 算法层、Spring Boot 后端、HBase 大数据层、前端 ECharts 四部分组成，统一部署到一台 Linux 虚拟机。**所有环境相关参数均通过环境变量注入，迁移到新环境只需改一组变量，无需改动代码或脚本正文。**
 
+### 本机 VMware 一键部署/启动
+
+首次在一台新电脑部署时，先填写 `config/local.env`，确保 VMware 虚拟机已启动并能通过 SSH 连接，然后在项目根目录依次运行：
+
+```powershell
+python scripts/deploy_local_vm.py prepare
+python scripts/deploy_local_vm.py start-data
+python scripts/deploy_local_vm.py upload
+python scripts/deploy_local_vm.py seed
+python scripts/deploy_local_vm.py build
+python scripts/deploy_local_vm.py predict
+```
+
+部署完成后无需重复构建。以后只需先启动 VMware，再双击 `start_website.bat`；脚本会读取本机私有配置，检查并启动 Hadoop、HBase、Spring Boot 和预测服务，随后打开网站。也可以在终端运行：
+
+```powershell
+python scripts/deploy_local_vm.py start
+```
+
+本版本新增：用户端/企业端独立修改密码入口、基于真实岗位数据的 51 城市动态选择、Word/PDF 简历投递及企业人才库预览/下载保存。测试账号为用户端 `admin / 123456`、企业端 `demo_co / 123456`。
+
 ### 6.1 部署变量（迁移时只改这里）
 
 #### 方式 A —— 写进 `config/local.env`（推荐，代码与启动脚本都读它）

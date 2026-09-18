@@ -73,6 +73,12 @@
 .resume-skills { display: flex; flex-wrap: wrap; gap: 6px; }
 .skill-tag { background: var(--bg); padding: 4px 10px; border-radius: 4px; font-size: 12px; }
 .resume-intro { font-size: 14px; line-height: 1.6; color: var(--text); }
+.attachment-card { background:#f7f9ff; border:1px solid #dfe6ff; border-radius:8px; padding:14px; }
+.attachment-name { font-weight:600; margin-bottom:6px; word-break:break-all; }
+.attachment-meta { color:var(--text-light); font-size:12px; margin-bottom:10px; }
+.btn-attachment { display:inline-block; padding:7px 14px; margin-right:8px; border-radius:6px; text-decoration:none; font-size:13px; }
+.btn-preview { color:var(--primary); border:1px solid var(--primary); background:#fff; }
+.btn-download { color:#fff; background:var(--primary); border:1px solid var(--primary); }
 </style>
 
 <script src="/js/common.js"></script>
@@ -112,7 +118,8 @@ async function viewResume(userUsername, name) {
   document.getElementById('modalBody').innerHTML = '<p style="text-align:center;color:#999;">加载中...</p>';
   document.getElementById('resumeModal').style.display = 'flex';
 
-  var resume = await api('/api/chat/talent/resume?userUsername=' + encodeURIComponent(userUsername));
+  var resume = await api('/api/chat/talent/resume?userUsername=' + encodeURIComponent(userUsername)
+    + '&companyUsername=' + encodeURIComponent(companyUsername));
   if (!resume || Object.keys(resume).length === 0) {
     document.getElementById('modalBody').innerHTML = '<p style="text-align:center;color:#999;">该用户暂未填写简历</p>';
     return;
@@ -120,6 +127,21 @@ async function viewResume(userUsername, name) {
   var skills = (resume.skills || '').split(';').filter(function(s){return s;}).map(function(s){
     return '<span class="skill-tag">' + s + '</span>';
   }).join('');
+  var attachmentHtml = '<div class="resume-section"><h4>附件简历（Word / PDF）</h4>';
+  if (resume.attachmentName && resume.attachmentPath) {
+    var storedName = resume.attachmentPath.split('/').pop();
+    var isPdf = resume.attachmentName.toLowerCase().endsWith('.pdf');
+    attachmentHtml += '<div class="attachment-card">'
+      + '<div class="attachment-name">📎 ' + resume.attachmentName + '</div>'
+      + '<div class="attachment-meta">投递岗位：' + (resume.attachmentJobTitle || '未知')
+      + '　投递时间：' + (resume.attachmentApplyTime || '未知') + '</div>'
+      + (isPdf ? '<a class="btn-attachment btn-preview" href="' + resume.attachmentPath + '" target="_blank">在线预览 PDF</a>' : '')
+      + '<a class="btn-attachment btn-download" href="/api/files/' + encodeURIComponent(storedName)
+      + '/download">下载并保存到电脑</a></div>';
+  } else {
+    attachmentHtml += '<span style="color:#999;">该候选人没有向本企业投递 Word/PDF 附件</span>';
+  }
+  attachmentHtml += '</div>';
   document.getElementById('modalBody').innerHTML =
     '<div class="resume-section">'
     + '<h4>基本信息</h4>'
@@ -145,7 +167,8 @@ async function viewResume(userUsername, name) {
     + '<div class="resume-section">'
     + '<h4>自我介绍</h4>'
     + '<div class="resume-intro">' + (resume.self_intro || '暂无') + '</div>'
-    + '</div>';
+    + '</div>'
+    + attachmentHtml;
 }
 
 async function removeTalent(userUsername, name) {

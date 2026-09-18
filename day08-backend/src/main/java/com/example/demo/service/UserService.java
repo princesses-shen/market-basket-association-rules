@@ -27,4 +27,9 @@ public class UserService {
         result.put("role", "user");
         return result;
     }
+
+    // 修改密码：交给账号安全服务统一做 BCrypt 校验、原子写入与令牌失效。
+    public Map<String, Object> changePassword(String username, String oldPassword, String newPassword) throws Exception {
+        return accounts.changePassword(AccountType.user, username, oldPassword, newPassword);
+    }
 }

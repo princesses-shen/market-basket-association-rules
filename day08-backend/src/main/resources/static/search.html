@@ -49,7 +49,6 @@
 <script>
 injectNavbar('search');
 
-var CITIES = ["北京","上海","广州","深圳","杭州","成都","南京","武汉","西安","长沙","苏州","重庆","天津","青岛","厦门"];
 var CATEGORIES = ["全部","后端开发","前端开发","移动开发","测试","运维","数据","算法","产品","设计","安全"];
 var curPage = 1;
 var curCity = '';
@@ -64,11 +63,14 @@ function initFromURL() {
   document.getElementById('kwInput').value = curKeyword;
 }
 
-// 渲染城市筛选
-function renderCityFilter() {
+// 渲染城市筛选：城市池取自岗位数据（接口异常时回退到 common.js 的完整城市列表），不再限定热门城市
+async function renderCityFilter() {
+  var cities = [];
+  try { cities = await api('/api/job/cities'); } catch (e) {}
+  if (!Array.isArray(cities) || cities.length === 0) cities = DEFAULT_CITIES;
   var el = document.getElementById('cityFilter');
   var h = '<label><input type="radio" name="cityF" value="" ' + (!curCity?'checked':'') + ' onchange="curCity=this.value;doSearch(1)"> 全部</label>';
-  CITIES.forEach(function(c) {
+  cities.forEach(function(c) {
     h += '<label><input type="radio" name="cityF" value="'+c+'" ' + (curCity===c?'checked':'') + ' onchange="curCity=this.value;doSearch(1)"> '+c+'</label>';
   });
   el.innerHTML = h;
