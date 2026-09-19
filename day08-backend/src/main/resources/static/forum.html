@@ -122,6 +122,11 @@
     line-height: 1.4;
   }
   .article-card:hover .title { color: var(--primary); }
+  .article-card .pinned-badge {
+    display: inline-block; background: #ff4757; color: #fff;
+    padding: 2px 8px; border-radius: 4px; font-size: 11px;
+    margin-right: 6px;
+  }
   .article-card .summary {
     font-size: 13px;
     color: var(--text-light);
@@ -224,8 +229,11 @@
 
 <div class="forum-layout">
   <div class="forum-main">
-    <div class="category-bar" id="categoryBar">
+    <div style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;gap:12px;">
+      <div class="category-bar" id="categoryBar" style="flex:1;margin-bottom:0;">
       <span>分类：</span>
+    </div>
+      <a href="/post-editor.html" style="padding:8px 20px;background:var(--primary);color:#fff;border-radius:8px;font-size:14px;text-decoration:none;white-space:nowrap;">✍️ 发帖</a>
     </div>
     <div id="articleList"></div>
     <div class="pagination" id="pagination"></div>
@@ -261,6 +269,7 @@
       .then(r => r.json())
       .then(cats => {
         const bar = document.getElementById('categoryBar');
+        bar.innerHTML = '<span>分类：</span>';
         cats.forEach(cat => {
           const a = document.createElement('a');
           a.href = 'javascript:;';
@@ -300,9 +309,9 @@
     }
     box.innerHTML = list.map(a => `
       <div class="article-card" onclick="location.href='article.html?id=${a.id}'">
-        <div class="cover">${a.cover || '📄'}</div>
+        <div class="cover">${a.cover || (a.is_user_post ? '✍️' : '📄')}</div>
         <div class="info">
-          <div class="title">${a.title}</div>
+          <div class="title">${a.pinned ? '<span class="pinned-badge">置顶</span>' : ''}${a.title}</div>
           <div class="summary">${a.summary}</div>
           <div class="meta">
             <span class="cat-tag">${a.category}</span>

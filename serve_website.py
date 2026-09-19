@@ -31,6 +31,10 @@ import pandas as pd
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "src", "serving"))
 from forum_data import (get_article_list, get_article_detail,
                          get_comments, add_comment, like_article,
+                         create_post, update_post, delete_post,
+                         get_user_posts, pin_post,
+                         add_notification, get_notifications,
+                         get_unread_count, mark_notifications_read,
                          FORUM_CATEGORIES)
 
 BASE = os.path.dirname(os.path.abspath(__file__))
@@ -165,7 +169,8 @@ USERS = {
     "xiaoliyu": {"password": hashlib.sha256("123456".encode()).hexdigest(),
                  "email": "xiaoliyu@recruit.com", "nickname": "小李鱼", "role": "user"},
     "zhangsan": {"password": hashlib.sha256("123456".encode()).hexdigest(),
-                 "email": "zhangsan@recruit.com", "nickname": "张三", "role": "user"},
+                 "email": "zhangsan@recruit.com", "nickname": "张三公司", "role": "company",
+                 "company_name": "张三科技有限公司"},
 }
 
 # 简易 token 存储
@@ -392,6 +397,37 @@ class WebsiteHandler(http.server.SimpleHTTPRequestHandler):
             self._send_json(FORUM_CATEGORIES)
             return
 
+        # 用户帖子列表
+        if path.startswith("/api/forum/my-posts"):
+            auth = self.headers.get("Authorization", "")
+            username = verify_token(auth)
+            if not username:
+                self._send_json({"error": "请先登录"})
+                return
+            posts = get_user_posts(username)
+            self._send_json(posts)
+            return
+
+        # 未读通知数
+        if path.startswith("/api/forum/unread"):
+            auth = self.headers.get("Authorization", "")
+            username = verify_token(auth)
+            if not username:
+                self._send_json({"count": 0})
+                return
+            self._send_json({"count": get_unread_count(username)})
+            return
+
+        # 通知列表
+        if path.startswith("/api/forum/notifications"):
+            auth = self.headers.get("Authorization", "")
+            username = verify_token(auth)
+            if not username:
+                self._send_json([])
+                return
+            self._send_json(get_notifications(username))
+            return
+
         # === 用户接口 ===
         if path == "/api/user/profile":
             auth = self.headers.get("Authorization", "")
@@ -479,22 +515,31 @@ class WebsiteHandler(http.server.SimpleHTTPRequestHandler):
                              "username": username, "msg": "注册成功"})
             return
 
-        if path == "/api/user/login":
+        if path in ("/api/user/login", "/api/company/login", "/api/admin/login"):
             username = body.get("username", "").strip()
             password = body.get("password", "")
             user = USERS.get(username)
             if not user:
-                self._send_json({"success": False, "msg": "用户不存在"})
+                self._send_json({"code": 1, "msg": "用户不存在"})
                 return
             pwd_hash = hashlib.sha256(password.encode()).hexdigest()
             if pwd_hash != user["password"]:
-                self._send_json({"success": False, "msg": "密码错误"})
+                self._send_json({"code": 1, "msg": "密码错误"})
+                return
+            role = user.get("role", "user")
+            expected_role = path.split("/")[2]
+            if expected_role == "admin" and role != "admin":
+                self._send_json({"code": 1, "msg": "该账号无管理员权限"})
                 return
             token = gen_token(username)
-            self._send_json({"success": True, "token": token,
-                             "username": username,
-                             "nickname": user.get("nickname", username),
-                             "msg": "登录成功"})
+            resp = {"code": 0, "token": token,
+                    "username": username,
+                    "role": role,
+                    "nickname": user.get("nickname", username),
+                    "msg": "登录成功"}
+            if role == "company":
+                resp["company_name"] = user.get("company_name", username)
+            self._send_json(resp)
             return
 
         # === 论坛评论 ===
@@ -502,7 +547,7 @@ class WebsiteHandler(http.server.SimpleHTTPRequestHandler):
             auth = self.headers.get("Authorization", "")
             username = verify_token(auth)
             if not username:
-                self._send_json({"success": False, "msg": "请先登录"})
+                self._send_json({"success": False, "msg": "请先登录"}, 401)
                 return
             article_id = path.split("/")[-1]
             content = body.get("content", "").strip()
@@ -511,9 +556,116 @@ class WebsiteHandler(http.server.SimpleHTTPRequestHandler):
                 return
             comment = add_comment(article_id, username, content)
             if comment:
+                # 给帖子作者发通知
+                article = get_article_detail(article_id)
+                if article and article.get("author") != username:
+                    add_notification(article["author"], "comment", article_id,
+                                     f"{username} 评论了你的文章《{article['title']}》")
                 self._send_json({"success": True, "comment": comment, "msg": "评论成功"})
             else:
                 self._send_json({"success": False, "msg": "文章不存在"})
+            return
+
+        # === 论坛点赞（POST） ===
+        if path.startswith("/api/forum/like/"):
+            article_id = path.split("/")[-1]
+            ok = like_article(article_id)
+            if ok:
+                article = get_article_detail(article_id)
+                if article:
+                    auth = self.headers.get("Authorization", "")
+                    username = verify_token(auth)
+                    if username and article.get("author") != username:
+                        add_notification(article["author"], "like", article_id,
+                                         f"{username} 点赞了你的文章《{article['title']}》")
+            self._send_json({"success": ok})
+            return
+
+        # === 用户发帖 ===
+        if path == "/api/forum/create":
+            auth = self.headers.get("Authorization", "")
+            username = verify_token(auth)
+            if not username:
+                self._send_json({"code": 1, "msg": "请先登录"}, 401)
+                return
+            title = body.get("title", "").strip()
+            content = body.get("content", "").strip()
+            category = body.get("category", "求职攻略")
+            summary = body.get("summary", "").strip()
+            tags = body.get("tags", [])
+            if not title or not content:
+                self._send_json({"code": 1, "msg": "标题和内容不能为空"})
+                return
+            post = create_post(username, title, content, category, summary, tags)
+            self._send_json({"code": 0, "post": post, "msg": "发帖成功"})
+            return
+
+        # === 编辑帖子 ===
+        if path.startswith("/api/forum/update/"):
+            auth = self.headers.get("Authorization", "")
+            username = verify_token(auth)
+            if not username:
+                self._send_json({"code": 1, "msg": "请先登录"}, 401)
+                return
+            post_id = path.split("/")[-1]
+            post = update_post(post_id, username,
+                               title=body.get("title"),
+                               content=body.get("content"),
+                               category=body.get("category"),
+                               summary=body.get("summary"),
+                               tags=body.get("tags"))
+            if post:
+                self._send_json({"code": 0, "post": post, "msg": "修改成功"})
+            else:
+                self._send_json({"code": 1, "msg": "只能编辑自己的帖子"})
+            return
+
+        # === 删除帖子 ===
+        if path.startswith("/api/forum/delete/"):
+            auth = self.headers.get("Authorization", "")
+            username = verify_token(auth)
+            if not username:
+                self._send_json({"code": 1, "msg": "请先登录"}, 401)
+                return
+            post_id = path.split("/")[-1]
+            user = USERS.get(username, {})
+            is_admin = user.get("role") == "admin"
+            ok = delete_post(post_id, username, is_admin)
+            if ok:
+                self._send_json({"code": 0, "msg": "删除成功"})
+            else:
+                self._send_json({"code": 1, "msg": "只能删除自己的帖子"})
+            return
+
+        # === 置顶/取消置顶（管理员） ===
+        if path.startswith("/api/forum/pin/"):
+            auth = self.headers.get("Authorization", "")
+            username = verify_token(auth)
+            if not username:
+                self._send_json({"code": 1, "msg": "请先登录"}, 401)
+                return
+            user = USERS.get(username, {})
+            if user.get("role") != "admin":
+                self._send_json({"code": 1, "msg": "只有管理员可以置顶"})
+                return
+            post_id = path.split("/")[-1]
+            pinned = body.get("pinned", True)
+            ok = pin_post(post_id, pinned)
+            if ok:
+                self._send_json({"code": 0, "msg": "置顶成功" if pinned else "取消置顶"})
+            else:
+                self._send_json({"code": 1, "msg": "文章不存在"})
+            return
+
+        # === 标记通知已读 ===
+        if path == "/api/forum/notifications/read":
+            auth = self.headers.get("Authorization", "")
+            username = verify_token(auth)
+            if not username:
+                self._send_json({"code": 1, "msg": "请先登录"}, 401)
+                return
+            mark_notifications_read(username)
+            self._send_json({"code": 0, "msg": "已标记为已读"})
             return
 
         self._send_json({"error": "not found"}, 404)

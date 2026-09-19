@@ -63,6 +63,24 @@
     </div>
     <div id="recommendJobs"></div>
   </div>
+
+  <!-- 消息通知 -->
+  <div class="recommend-section" style="margin-top:24px;">
+    <div class="section-header">
+      <h3>🔔 消息通知 <span id="unreadBadge" style="display:none;background:#f44336;color:#fff;border-radius:10px;font-size:11px;padding:2px 8px;margin-left:8px;"></span></h3>
+      <a href="javascript:;" onclick="markRead()" id="markReadBtn" style="display:none;">全部已读 →</a>
+    </div>
+    <div id="notifyList"><div style="padding:20px 0;color:#999;text-align:center;font-size:13px;">暂无消息</div></div>
+  </div>
+
+  <!-- 我的发帖 -->
+  <div class="recommend-section" style="margin-top:24px;">
+    <div class="section-header">
+      <h3>✍️ 我的发帖</h3>
+      <a href="/post-editor.html">发布新帖 →</a>
+    </div>
+    <div id="myPosts"><div style="padding:20px 0;color:#999;text-align:center;font-size:13px;">还没有发过帖，<a href="/post-editor.html" style="color:var(--primary);">立即发布 →</a></div></div>
+  </div>
 </div>
 
 <style>
@@ -149,6 +167,77 @@ async function loadRecommend() {
 loadProfile();
 loadAppCount();
 loadRecommend();
+loadNotifications();
+loadMyPosts();
+
+// 未读消息
+async function loadNotifications() {
+  var user = getCurrentUser();
+  if (!user) return;
+  try {
+    // 未读数
+    var unreadR = await fetch('/api/forum/unread', {
+      headers: { 'Authorization': 'Bearer ' + user.token }
+    }).then(r => r.json());
+    if (unreadR.count > 0) {
+      var badge = document.getElementById('unreadBadge');
+      badge.textContent = unreadR.count;
+      badge.style.display = 'inline';
+      document.getElementById('markReadBtn').style.display = '';
+    }
+    // 通知列表
+    var list = await fetch('/api/forum/notifications', {
+      headers: { 'Authorization': 'Bearer ' + user.token }
+    }).then(r => r.json());
+    var el = document.getElementById('notifyList');
+    if (!list || list.length === 0) {
+      el.innerHTML = '<div style="padding:20px 0;color:#999;text-align:center;font-size:13px;">暂无消息</div>';
+      return;
+    }
+    el.innerHTML = list.slice(0, 10).map(n => {
+      var icon = n.type === 'like' ? '👍' : n.type === 'comment' ? '💬' : '📢';
+      var bg = n.read ? 'transparent' : '#f0f7ff';
+      return '<div style="padding:12px 0;border-bottom:1px solid var(--bg);background:' + bg + ';border-radius:8px;padding:12px;cursor:pointer;" onclick="location.href=\'/article.html?id=' + n.article_id + '\'">'
+        + '<span style="font-size:16px;">' + icon + '</span> '
+        + '<span style="font-size:13px;">' + n.content + '</span>'
+        + '<span style="font-size:11px;color:#999;float:right;">' + n.time + '</span>'
+        + '</div>';
+    }).join('');
+  } catch(e) {}
+}
+
+async function markRead() {
+  var user = getCurrentUser();
+  if (!user) return;
+  try {
+    await fetch('/api/forum/notifications/read', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + user.token },
+      body: '{}'
+    });
+    loadNotifications();
+  } catch(e) {}
+}
+
+// 我的发帖
+async function loadMyPosts() {
+  var user = getCurrentUser();
+  if (!user) return;
+  try {
+    var posts = await fetch('/api/forum/my-posts', {
+      headers: { 'Authorization': 'Bearer ' + user.token }
+    }).then(r => r.json());
+    var el = document.getElementById('myPosts');
+    if (!posts || posts.length === 0) return;
+    el.innerHTML = posts.map(p => {
+      return '<div style="display:flex;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--bg);cursor:pointer;" onclick="location.href=\'/article.html?id=' + p.id + '\'">'
+        + '<div><div style="font-weight:600;">' + (p.pinned ? '📌 ' : '') + p.title + '</div>'
+        + '<div style="color:var(--text-light);font-size:12px;margin-top:4px;">' + p.category + ' · 👁' + p.views + ' · 👍' + p.likes + ' · 💬' + p.comments_count + '</div></div>'
+        + '<div style="font-size:12px;color:#999;">' + p.publish_time + '</div>'
+        + '</div>';
+    }).join('');
+  } catch(e) {}
+}
 </script>
 </body>
 </html>

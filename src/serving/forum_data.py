@@ -4,7 +4,13 @@
 =================================
 文章列表 / 详情 / 评论 / 点赞 / 分类
 """
+import os
+import json
 from datetime import datetime
+
+# 持久化存储路径
+_DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "data")
+_PERSIST_FILE = os.path.join(_DATA_DIR, "forum_persist.json")
 
 FORUM_CATEGORIES = ["全部", "求职攻略", "转行经验", "薪资谈判", "职场生存", "职场热点", "面试技巧"]
 
@@ -343,6 +349,7 @@ def add_comment(article_id, username, content):
     }
     FORUM_COMMENTS[article_id].append(comment)
     article["comments_count"] += 1
+    _save_persist()
     return comment
 
 
@@ -350,5 +357,172 @@ def like_article(article_id):
     for a in FORUM_ARTICLES:
         if a["id"] == article_id:
             a["likes"] += 1
+            _save_persist()
             return True
     return False
+
+
+def _save_persist():
+    """保存评论、点赞、用户帖子和通知数据到文件"""
+    try:
+        data = {
+            "likes": {a["id"]: a["likes"] for a in FORUM_ARTICLES},
+            "comments": {k: v for k, v in FORUM_COMMENTS.items()},
+            "comments_count": {a["id"]: a["comments_count"] for a in FORUM_ARTICLES},
+            "user_posts": [a for a in FORUM_ARTICLES if a.get("is_user_post")],
+            "pinned": [a["id"] for a in FORUM_ARTICLES if a.get("pinned")],
+            "notifications": FORUM_NOTIFICATIONS,
+        }
+        with open(_PERSIST_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+
+
+def _load_persist():
+    """从文件恢复所有数据"""
+    try:
+        if not os.path.exists(_PERSIST_FILE):
+            return
+        with open(_PERSIST_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        for a in FORUM_ARTICLES:
+            if a["id"] in data.get("likes", {}):
+                a["likes"] = data["likes"][a["id"]]
+            if a["id"] in data.get("comments_count", {}):
+                a["comments_count"] = data["comments_count"][a["id"]]
+        for art_id, comments in data.get("comments", {}).items():
+            if art_id in FORUM_COMMENTS:
+                existing_ids = {c["id"] for c in FORUM_COMMENTS[art_id]}
+                for c in comments:
+                    if c["id"] not in existing_ids:
+                        FORUM_COMMENTS[art_id].append(c)
+            else:
+                FORUM_COMMENTS[art_id] = comments
+        # 恢复用户帖子
+        existing_ids = {a["id"] for a in FORUM_ARTICLES}
+        for post in data.get("user_posts", []):
+            if post["id"] not in existing_ids:
+                FORUM_ARTICLES.insert(0, post)
+                existing_ids.add(post["id"])
+        # 恢复置顶
+        for pinned_id in data.get("pinned", []):
+            for a in FORUM_ARTICLES:
+                if a["id"] == pinned_id:
+                    a["pinned"] = True
+        # 恢复通知
+        global FORUM_NOTIFICATIONS
+        FORUM_NOTIFICATIONS = data.get("notifications", {})
+    except Exception:
+        pass
+
+
+# ============ 用户发帖 ============
+
+FORUM_NOTIFICATIONS = {}  # {username: [{type, article_id, content, time, read}]}
+
+
+def create_post(username, title, content, category, summary="", tags=None):
+    """用户创建帖子"""
+    post_id = "up_" + datetime.now().strftime("%Y%m%d%H%M%S") + str(len(FORUM_ARTICLES))
+    post = {
+        "id": post_id,
+        "title": title,
+        "author": username,
+        "author_avatar": "✍️",
+        "category": category,
+        "summary": summary or title[:50],
+        "content": content,
+        "tags": tags or [],
+        "publish_time": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "views": 0,
+        "likes": 0,
+        "comments_count": 0,
+        "is_user_post": True,
+        "pinned": False,
+    }
+    FORUM_ARTICLES.insert(0, post)
+    _save_persist()
+    return post
+
+
+def update_post(post_id, username, title=None, content=None, category=None, summary=None, tags=None):
+    """编辑自己的帖子"""
+    for a in FORUM_ARTICLES:
+        if a["id"] == post_id and a.get("author") == username:
+            if title: a["title"] = title
+            if content: a["content"] = content
+            if category: a["category"] = category
+            if summary: a["summary"] = summary
+            if tags is not None: a["tags"] = tags
+            a["edit_time"] = datetime.now().strftime("%Y-%m-%d %H:%M")
+            _save_persist()
+            return a
+    return None
+
+
+def delete_post(post_id, username, is_admin=False):
+    """删除帖子（作者或管理员）"""
+    for i, a in enumerate(FORUM_ARTICLES):
+        if a["id"] == post_id:
+            if a.get("author") == username or is_admin:
+                FORUM_ARTICLES.pop(i)
+                if post_id in FORUM_COMMENTS:
+                    del FORUM_COMMENTS[post_id]
+                _save_persist()
+                return True
+    return False
+
+
+def get_user_posts(username):
+    """获取用户的所有帖子"""
+    return [a for a in FORUM_ARTICLES if a.get("author") == username and a.get("is_user_post")]
+
+
+def pin_post(post_id, pinned=True):
+    """置顶/取消置顶（管理员）"""
+    for a in FORUM_ARTICLES:
+        if a["id"] == post_id:
+            a["pinned"] = pinned
+            _save_persist()
+            return True
+    return False
+
+
+# ============ 通知系统 ============
+
+def add_notification(username, ntype, article_id, content):
+    """添加通知"""
+    if username not in FORUM_NOTIFICATIONS:
+        FORUM_NOTIFICATIONS[username] = []
+    FORUM_NOTIFICATIONS[username].insert(0, {
+        "type": ntype,
+        "article_id": article_id,
+        "content": content,
+        "time": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "read": False,
+    })
+    if len(FORUM_NOTIFICATIONS[username]) > 50:
+        FORUM_NOTIFICATIONS[username] = FORUM_NOTIFICATIONS[username][:50]
+    _save_persist()
+
+
+def get_notifications(username):
+    """获取用户通知列表"""
+    return FORUM_NOTIFICATIONS.get(username, [])
+
+
+def get_unread_count(username):
+    """获取未读通知数"""
+    return len([n for n in FORUM_NOTIFICATIONS.get(username, []) if not n.get("read")])
+
+
+def mark_notifications_read(username):
+    """标记所有通知为已读"""
+    if username in FORUM_NOTIFICATIONS:
+        for n in FORUM_NOTIFICATIONS[username]:
+            n["read"] = True
+        _save_persist()
+
+
+_load_persist()
