@@ -13,7 +13,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import java.util.Map;
 
 @RestControllerAdvice(assignableTypes = {AccountController.class, UserController.class, CompanyController.class,
-        ResumeController.class, ChatController.class, FileController.class})
+        ResumeController.class, ChatController.class, FileController.class, AnnouncementController.class})
 public class AccountErrorHandler {
     private static final Logger log = LoggerFactory.getLogger(AccountErrorHandler.class);
     @ExceptionHandler(AccountException.class)

@@ -1,6 +1,17 @@
 {
   "version": "1.0.0",
   "tables": {
+    "recruit_announcement": {
+      "cf": "info",
+      "rowkey": "server-generated UUID",
+      "columns": {
+        "title": "string (1–100 Unicode code points)",
+        "body": "string (1–10000 Unicode code points)",
+        "author": "string (administrator account, not exposed publicly)",
+        "publishedAt": "string (Unix milliseconds, unchanged on edit)",
+        "updatedAt": "string (Unix milliseconds)"
+      }
+    },
     "recruit_job": {
       "cf": "info",
       "rowkey": "job_{id}",

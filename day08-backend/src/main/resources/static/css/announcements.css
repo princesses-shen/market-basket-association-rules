@@ -1,0 +1,18 @@
+.announcement-page{max-width:1000px;margin:32px auto;padding:0 20px}
+.announcement-page h1{font-size:28px;margin:8px 0}.announcement-hint,.announcement-meta{color:var(--text-light)}
+.announcement-panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin:24px 0}
+.announcement-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.announcement-heading h2{font-size:20px}.announcement-heading a{font-size:14px}
+.announcement-row{padding:18px 0;border-bottom:1px solid var(--border);overflow-wrap:anywhere}
+.announcement-row:last-child{border-bottom:0}.announcement-row h3{font-size:18px;font-weight:600;margin-bottom:6px}
+.announcement-meta{font-size:13px}.announcement-actions,.announcement-pager{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:14px}
+.announcement-page button{background:var(--primary);color:white;border:1px solid var(--primary);border-radius:6px;padding:9px 16px;cursor:pointer;font:inherit}
+.announcement-page button.secondary{background:white;color:var(--primary)}.announcement-page button.danger{background:white;border-color:var(--danger);color:var(--danger)}
+.announcement-page button:disabled{opacity:.5;cursor:default}.announcement-page button:focus-visible,.announcement-page a:focus-visible{outline:3px solid var(--primary-light);outline-offset:3px}
+.announcement-page label{display:block;font-weight:600;margin-bottom:8px}.announcement-page input,.announcement-page textarea{display:block;width:100%;font:inherit;padding:12px;border:1px solid var(--border);border-radius:6px;margin-bottom:6px;background:white;color:var(--text)}
+.announcement-page textarea{resize:vertical;min-height:220px}.announcement-field{margin:20px 0}.announcement-page small{color:var(--text-light)}
+.announcement-status{min-height:26px;margin-top:14px;overflow-wrap:anywhere}.announcement-status.error{color:var(--danger)}
+.announcement-body{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.9;margin-top:24px}.announcement-title{overflow-wrap:anywhere}
+.announcement-pager{justify-content:flex-end}.announcement-page [hidden]{display:none!important}
+.announcement-home{max-width:1200px;margin:24px auto}.announcement-home .announcement-panel{margin:0}
+@media(max-width:768px){.announcement-page{margin:20px auto;padding:0 16px}.announcement-panel{padding:18px}.announcement-page h1{font-size:24px}.announcement-pager{justify-content:flex-start}}

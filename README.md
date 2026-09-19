@@ -722,6 +722,34 @@ bat 的 6 步逻辑：
 - GitHub 开源：<https://github.com/rasbt/mlxtend>
 
 
+## 管理员公告
+
+管理员登录后，点击导航中的 **公告管理**（`/admin/announcements.html`）发布、编辑或删除公告。
+所有访客都能通过 **网站公告**（`/announcements.html`）查看分页列表和详情，首页显示最新 3 条。
+标题最多 100 字，正文最多 10,000 字，以纯文本展示并保留换行；编辑保留原发布时间，删除前需要确认。
+
+两种运行方式使用相同页面和 API，各自保存数据：
+
+- **Spring Boot：** 按原有配置准备 HBase 和 JWT，运行 `powershell -File start_backend.ps1 -Build`。
+  启动时自动创建 `recruit_announcement` 表（列族 `info`），管理员账号沿用现有账号安全配置。
+- **Python 本地演示：** 运行 `python serve_website.py 8080`，使用演示管理员 `admin / 123456` 登录。
+  公告保存到 `data/announcements.json`，重启后保留；文件不入库。登录令牌仍为演示服务的内存令牌，重启后需重新登录。
+  JSON 损坏或写入失败时返回错误，不覆盖原文件。请保留文件备份，再排查目录写入权限或文件内容。
+
+两套服务默认都使用 8080 端口，请选择一种启动。管理员写入权限均由服务端校验。
+
+验证命令（项目根目录）：
+
+```powershell
+python -m unittest tests.test_announcements -v
+mvn -f day08-backend/pom.xml test
+python scripts/test_announcements_browser.py
+```
+
+浏览器验收依赖 `pip install playwright` 和 `python -m playwright install chromium`，使用临时公告文件和随机本地端口，不修改已有公告。
+截图输出到 `outputs/announcement-qa/`。Java 测试使用模拟 HBase，真实 HBase 重启持久化需在部署环境验收。
+接口、边界与验证结果见 [管理员公告功能实施方案](docs/管理员公告功能-实施方案.md)。
+
 ## 账号邮件功能
 
 已支持用户和企业的注册邮箱验证、邮箱验证码登录及找回密码。使用 `start_backend.ps1 -Build` 启动，或 `start_backend.ps1 -SmtpTest` 单独验证 QQ SMTP。配置、接口和验收范围见 [QQ 邮箱与验证码登录](docs/QQ邮箱与验证码登录.md)。
@@ -783,4 +811,3 @@ python scripts/gen_realistic_data.py    # 或：本地生成仿真数据
 ```
 
 数据来源：天池岗位数据集 <https://tianchi.aliyun.com/dataset/221302>（GPL 2.0）。
-

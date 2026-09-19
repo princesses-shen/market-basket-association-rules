@@ -51,6 +51,8 @@ lagou_local_crawl.py
 data/raw/*.csv
 data/raw/*.tsv
 data/raw/*.json
+data/announcements.json
+data/.announcements-*.tmp
 data/clean/recruit_clean.tsv
 
 # Model artifacts

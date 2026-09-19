@@ -25,6 +25,7 @@ import urllib.request
 from urllib.parse import urlparse, parse_qs, unquote
 from datetime import datetime, timedelta
 import random
+import re
 
 import pandas as pd
 
@@ -36,8 +37,10 @@ from forum_data import (get_article_list, get_article_detail,
                          add_notification, get_notifications,
                          get_unread_count, mark_notifications_read,
                          FORUM_CATEGORIES)
+from src.serving.announcements import AnnouncementStore, AnnouncementError
 
 BASE = os.path.dirname(os.path.abspath(__file__))
+ANNOUNCEMENTS = AnnouncementStore(os.path.join(BASE, "data", "announcements.json"))
 STATIC_DIR = os.path.join(BASE, "day08-backend", "src", "main", "resources", "static")
 ECHARTS_DIR = os.path.join(BASE, "outputs", "charts", "js")
 DATA_CLEAN = os.path.join(BASE, "data", "clean", "recruit_clean.tsv")
@@ -317,6 +320,34 @@ class WebsiteHandler(http.server.SimpleHTTPRequestHandler):
         except Exception as e:
             self._send_json({"code": 1, "msg": str(e)}, 502)
 
+    def _announcement_write(self, path):
+        try:
+            username = verify_token(self.headers.get("Authorization", ""))
+            account = USERS.get(username)
+            if not account:
+                raise AnnouncementError(401, "请先登录")
+            if account.get("role") != "admin":
+                raise AnnouncementError(403, "无权访问该资源")
+            match = re.fullmatch(r"/api/admin/announcements/([^/]+)/(update|delete)", path)
+            if path != "/api/admin/announcements" and not match:
+                raise AnnouncementError(404, "接口不存在")
+            if match and match[2] == "delete":
+                ANNOUNCEMENTS.delete(unquote(match[1]))
+                result = {"code": 0, "msg": "公告已删除"}
+            else:
+                try:
+                    length = int(self.headers.get("Content-Length", "0"))
+                    if not 0 < length <= 262144:
+                        raise ValueError()
+                    body = json.loads(self.rfile.read(length).decode("utf-8"))
+                except (ValueError, UnicodeError):
+                    raise AnnouncementError(400, "请求参数不正确")
+                item = ANNOUNCEMENTS.update(unquote(match[1]), body) if match else ANNOUNCEMENTS.create(body, username)
+                result = {"code": 0, "item": item}
+            self._send_json(result)
+        except AnnouncementError as error:
+            self._send_json({"code": error.status, "msg": str(error)}, error.status)
+
     def do_OPTIONS(self):
         self.send_response(200)
         self.send_header("Access-Control-Allow-Origin", "*")
@@ -328,6 +359,18 @@ class WebsiteHandler(http.server.SimpleHTTPRequestHandler):
         parsed = urlparse(self.path)
         path = parsed.path
         qs = parse_qs(parsed.query)
+
+        if path == "/api/announcements" or path.startswith("/api/announcements/"):
+            try:
+                if path == "/api/announcements":
+                    params = parse_qs(parsed.query, keep_blank_values=True)
+                    result = ANNOUNCEMENTS.list(params.get("page", ["1"])[0], params.get("size", ["10"])[0])
+                else:
+                    result = {"code": 0, "item": ANNOUNCEMENTS.detail(unquote(path[len("/api/announcements/"):]))}
+                self._send_json(result)
+            except AnnouncementError as error:
+                self._send_json({"code": error.status, "msg": str(error)}, error.status)
+            return
 
         # === 岗位接口 ===
         if path == "/api/job/search":
@@ -491,6 +534,9 @@ class WebsiteHandler(http.server.SimpleHTTPRequestHandler):
     def do_POST(self):
         parsed = urlparse(self.path)
         path = parsed.path
+        if path == "/api/admin/announcements" or path.startswith("/api/admin/announcements/"):
+            self._announcement_write(path)
+            return
         body = self._read_body()
 
         if path == "/api/user/register":

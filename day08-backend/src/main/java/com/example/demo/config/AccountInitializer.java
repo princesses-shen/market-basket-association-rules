@@ -21,7 +21,7 @@ public class AccountInitializer implements ApplicationRunner {
     }
     @Override
     public void run(ApplicationArguments args) throws Exception {
-        for (String table : new String[]{"recruit_user", "recruit_company", "recruit_admin", "recruit_upload", "recruit_email_code"})
+        for (String table : new String[]{"recruit_user", "recruit_company", "recruit_admin", "recruit_upload", "recruit_email_code", "recruit_announcement"})
             hbase.ensureTable(table);
         Map<String, String> existing = hbase.getRow("recruit_admin", "lihuanshen123", "info");
         if (existing != null && existing.containsKey("password")) return;

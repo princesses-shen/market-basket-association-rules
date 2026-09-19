@@ -36,7 +36,9 @@ function saveLogin(result) {
     var sameOrigin = url.origin === location.origin;
     var isAccountForm = /^\/api\/(user|company|admin)\/(login|register)$/.test(url.pathname)
       || /^\/api\/auth\/(password-reset|register|email-login)\/(code|confirm)$/.test(url.pathname);
-    var protectedCall = sameOrigin && !isAccountForm
+    var publicAnnouncement = /^\/api\/announcements(?:\/|$)/.test(url.pathname)
+      && String((options && options.method) || (input instanceof Request ? input.method : 'GET')).toUpperCase() === 'GET';
+    var protectedCall = sameOrigin && !isAccountForm && !publicAnnouncement
       && (url.pathname.startsWith('/api/') || url.pathname.startsWith('/uploads/'));
     var opts = Object.assign({}, options || {});
     if (protectedCall) {
@@ -145,7 +147,8 @@ function injectNavbar(activePage) {
   if (role === 'admin') {
     menuHtml =
       '<a href="/index.html"' + (activePage==='home'?' class="active"':'') + '>首页</a>'
-      + '<a href="/admin/index.html"' + (activePage==='admin'?' class="active"':'') + '>账号安全管理</a>';
+      + '<a href="/admin/index.html"' + (activePage==='admin'?' class="active"':'') + '>账号安全管理</a>'
+      + '<a href="/admin/announcements.html"' + (activePage==='admin-announcements'?' class="active"':'') + '>公告管理</a>';
   } else if (role === 'company') {
     menuHtml =
       '<a href="/company/index.html"' + (activePage==='company-home'?' class="active"':'') + '>企业主页</a>'
@@ -167,6 +170,7 @@ function injectNavbar(activePage) {
       + '<a href="/change-password.html"' + (activePage==='change-password'?' class="active"':'') + '>修改密码</a>'
       + '<a href="/dashboard.html"' + (activePage==='dashboard'?' class="active"':'') + '>数据大屏</a>';
   }
+  menuHtml += '<a href="/announcements.html"' + (activePage==='announcements'?' class="active"':'') + '>网站公告</a>';
   var userArea = user
     ? '<span class="user-name">' + escapeHtml(user) + (role==='company'?' [企业]':role==='admin'?' [管理员]':'') + '</span>'
       + '<button class="btn-logout" onclick="logout()">退出</button>'

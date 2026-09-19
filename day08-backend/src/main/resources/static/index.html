@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>智聘 · 招聘分析平台</title>
 <link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="/css/announcements.css">
 </head>
 <body>
 <div id="navbar-container"></div>
@@ -23,6 +24,13 @@
 </div>
 
 <!-- 推荐岗位 -->
+<section class="announcement-page announcement-home" data-announcements="home" aria-label="最新公告">
+  <div class="announcement-panel"><div class="announcement-heading"><h2>网站公告</h2><a href="/announcements.html">查看全部 →</a></div>
+    <p id="announcement-status" class="announcement-status" role="status" aria-live="polite"></p><button id="announcement-retry" hidden>重新加载</button><div id="announcement-list"></div>
+  </div>
+</section>
+
+<!-- 推荐岗位列表 -->
 <div style="max-width:1200px;margin:24px auto;padding:0 20px;">
   <div class="card">
     <h3>推荐岗位</h3>
@@ -62,6 +70,7 @@
 </div>
 
 <script src="/js/common.js"></script>
+<script src="/js/announcements.js"></script>
 <script>
 injectNavbar('home');
 

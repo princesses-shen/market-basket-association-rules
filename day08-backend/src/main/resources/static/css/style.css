@@ -52,6 +52,9 @@ a:hover { color: var(--primary-light); }
   display: flex;
   gap: 32px;
   flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  white-space: nowrap;
 }
 .navbar .menu a {
   color: rgba(255,255,255,0.85);
@@ -452,8 +455,10 @@ a:hover { color: var(--primary-light); }
 @media (max-width: 768px) {
   .search-layout, .detail-layout { flex-direction: column; }
   .filter-sidebar, .detail-side { width: 100%; }
-  .navbar { padding: 0 16px; }
-  .navbar .menu { gap: 16px; }
+  .navbar { padding: 12px 16px; height: auto; min-height: var(--nav-height); flex-wrap: wrap; gap: 10px; }
+  .navbar .logo { font-size: 18px; margin-right: 0; }
+  .navbar .user-area { margin-left: auto; gap: 8px; flex-wrap: wrap; }
+  .navbar .menu { gap: 16px; order: 3; flex-basis: 100%; }
   .dashboard-grid { grid-template-columns: 1fr; }
   .search-box { flex-direction: column; }
   .search-box button { padding: 12px; }
